@@ -1,0 +1,251 @@
+# indexit — Agent Guidelines
+
+This file is the operating manual for any AI agent (Claude or otherwise) working
+inside this repository. Read it before taking any action.
+
+## 1. What this repository is
+
+`indexit` is a **research repository**, not an implementation. The actual
+product code that consumes these findings lives in a separate repository and
+depends on the conclusions reached here. Treat this repo as a lab notebook:
+its value is the rigor, completeness, and traceability of its analyses.
+Every conclusion should be useful to that downstream implementation: call out
+integration implications, blockers, assumptions, and the concrete adoption work
+needed before the finding can become product code.
+
+The domain under study is **extensible indexing of heterogeneous data sources**
+in service of two concrete goals:
+
+### Goal 1 — Cross-source consistency via the Sparkle system
+
+Sparkle is an evolution of the [PARA method](https://fortelabs.com/blog/para/).
+Every indexed item must map cleanly onto one of these top-level buckets:
+
+| Letter | Bucket     | Meaning                                                                                                                                            |
+| ------ | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **S**  | Stream     | Raw, unstructured, incoming data — the inbox before triage.                                                                                        |
+| **P**  | Projects   | Same as PARA: time-bounded efforts with a defined outcome.                                                                                         |
+| **A**  | Areas      | Same as PARA, **excluding** the user's core areas (those live in **E**).                                                                           |
+| **R**  | Resources  | Same as PARA: reference material organised by topic.                                                                                               |
+| **K**  | Knowledge  | *Crystallised* expertise — information the user has internalised, not merely consumed. Distinguishes "read an article" from "can teach the topic". |
+| **L**  | Legacy     | Same as PARA's *Archived*.                                                                                                                         |
+| **E**  | Essentials | The user's core identity layer: principles, worldview, the parts of the self that exist independently of any role or relationship.                 |
+
+Any solution under evaluation must be assessable against this taxonomy:
+*can it preserve Sparkle structure across heterogeneous sources without
+collapsing the distinctions above?*
+
+Sparkle fit is not only a labeling exercise. Evaluate whether the project can
+preserve source identity, metadata, ownership, permissions, deduplication,
+sync/update semantics, and conflict state across sources without losing the
+structure needed by Sparkle.
+
+### Goal 2 — Multimodal semantic indexing
+
+The system must index files of mixed types — text, images, audio, video — and
+support semantic search whose behaviour adapts to the modality of the file.
+This is achieved with multimodal models. Solutions are judged on how well
+they handle this fan-out without forcing every modality through a
+text-only bottleneck.
+
+Modality support must be evaluated per modality. Distinguish native
+multimodal embeddings and retrieval from OCR, ASR, transcription, thumbnailing,
+captioning, or other text-conversion fallbacks.
+
+## 2. Working language
+
+- **All artifacts are written in English.** This includes research notes,
+  reports, diagrams, commit messages, branch names, file names, code,
+  comments, and PR descriptions. No exceptions.
+- **Conversation with the user follows the user's language.** If the user
+  writes in Russian, reply in Russian. The English-only rule applies to what
+  is *committed to the repo*, not to chat.
+
+## 3. The agent's primary role: research analyst
+
+The recurring task is: *given an open-source project in the indexing domain,
+produce a deep-dive analysis of it.* Each analysis covers three aspects, in
+this order.
+
+### 3.1 Architecture
+
+Describe how the project is built using the **C4 model** (Context, Container,
+Component, and — when warranted — Code level), augmented with whatever
+additional diagrams help the reader build a mental model:
+
+- system context (who/what interacts with it),
+- containers (deployable units, processes, datastores),
+- components (the internal modules of each container),
+- key data flows for the indexing pipeline,
+- extension points and plugin surfaces,
+- runtime/deployment topology when relevant.
+
+Use **Mermaid** for diagrams unless a richer tool is clearly necessary.
+Annotate diagrams with prose explaining *why* the structure looks this way,
+not just *what* it is.
+
+### 3.2 Security
+
+Evaluate the project as a security reviewer would:
+
+- code-level risks (input validation, deserialization, injection, path
+  traversal, unsafe defaults),
+- secrets and credential handling,
+- supply-chain posture (dependency hygiene, pinning, provenance),
+- data-at-rest and data-in-transit protection,
+- isolation and least-privilege boundaries,
+- adherence to current best practices for the relevant ecosystem,
+- the project's track record of responding to security issues.
+
+Do **not** stop at consulting CVE feeds, OSV, or Dependabot output. If a risk
+is already in those databases, the upstream maintainers most likely know
+about it; that is not where our value is added. Perform a **full security
+scan**: read the code, follow the data, identify risks the public databases
+have not yet captured.
+
+Be specific: cite files, lines, and dependency versions. A finding without a
+location is not a finding.
+
+### 3.3 Applicability in context
+
+Judge the project against *our* goals (§1), not in the abstract:
+
+- How well does it serve Goal 1 (Sparkle consistency)? What would be lost
+  or distorted if we forced our taxonomy onto its data model?
+- How well does it serve Goal 2 (multimodal semantic search)? Does it
+  treat non-text modalities as first-class, or as afterthoughts?
+- Does it preserve source identity, metadata, permissions, ownership,
+  deduplication state, sync/update semantics, and conflicts across sources?
+- Does it provide modality-specific extraction, embedding, indexing, and
+  retrieval paths for text, image, audio, and video?
+- How extensible is it? What surfaces are stable, what are private?
+- What concrete work is required to adopt it — fork, plugin, wrapper,
+  upstream contribution? Estimate effort honestly.
+- What is the exit cost if the project stalls or pivots?
+
+End every applicability section with a clear recommendation: **adopt**,
+**adopt-with-changes**, **monitor**, or **reject** — and the reasoning.
+
+## 4. Mandatory analysis checklist
+
+Every analysis must answer the questions below, in writing, so that reports
+are directly comparable to one another. If a question does not apply, state
+*why* it does not apply rather than skipping it.
+
+### 4.1 Architecture — must answer
+
+- What problem does the project solve, in one paragraph?
+- What are the deployable units (processes, services, libraries, agents)?
+- What does the **indexing pipeline** look like end-to-end, from source to
+  query result?
+- What storage backends and indices are used (vector store, full-text,
+  metadata, blob storage)?
+- What are the extension points and plugin surfaces? Which are stable API,
+  which are internal?
+- What is the runtime model: single-process, distributed, embedded,
+  serverless?
+- What languages, frameworks, and major dependencies define the stack?
+
+### 4.2 Security — must answer
+
+- What is the authentication and authorization model?
+- Where are the trust boundaries, and how is input validated at each one?
+- How are secrets and credentials provisioned, stored, and rotated?
+- How is multi-tenant or multi-user data isolated?
+- Is data encrypted at rest and in transit? With what?
+- What is logged, and does the log surface contain anything sensitive?
+- What is the patch/release cadence and the maintainers' response history
+  to security reports?
+- What concrete risks did our own scan surface that are *not* already in
+  public CVE/OSV/Dependabot data?
+
+### 4.3 Applicability — must answer
+
+- How does the project's data model map onto **Sparkle** (S/P/A/R/K/L/E)?
+  Which buckets bend or collapse under its model?
+- How are **non-text modalities** (images, audio, video) handled — as
+  first-class citizens or bolted-on conversions to text?
+- Which parts of source identity, metadata, permissions, ownership,
+  deduplication, sync/update semantics, and conflict state survive indexing?
+- Which modalities use native multimodal representations, and which are
+  reduced to text through OCR, ASR, transcription, captions, or summaries?
+- What embedding/model strategy does it use, and is the choice pluggable?
+- Which source connectors relevant to us already exist?
+- License — is it compatible with downstream use?
+- Maintainer activity, governance, and bus factor.
+- Concrete adaptation effort: fork, plugin, wrapper, or upstream
+  contribution? Estimate honestly.
+- Final recommendation: **adopt** / **adopt-with-changes** / **monitor** /
+  **reject**, with reasoning.
+
+## 5. Output layout
+
+The repository separates **upstream code** from **agent-specific analysis**.
+
+- `research/<project-slug>/` — the upstream project itself, vendored as a
+  **git submodule** pinned to a specific commit. Read-only from our side;
+  do not commit changes inside it.
+- `docs/<agent-slug>. <project-slug>/` — one agent's analysis documents about
+  that project. The separator between `<agent-slug>` and `<project-slug>` is
+  exactly dot plus space: `. `. This allows multiple agents or model/effort
+  combinations to produce separate perspectives on the same upstream project.
+
+```
+research/
+  <project-slug>/        # git submodule → upstream repo (read-only)
+
+docs/
+  <agent-slug>. <project-slug>/
+    README.md            # executive summary, run metadata, links to reports
+    architecture.md      # §3.1 + §4.1
+    security.md          # §3.2 + §4.2
+    applicability.md     # §3.3 + §4.3
+    diagrams/            # Mermaid sources or rendered SVGs, if extracted
+    notes/               # excerpts, quoted code, transcripts
+```
+
+`<project-slug>` is the upstream repository name in `kebab-case` and must
+match the corresponding folder under `research/`. `<agent-slug>` is the
+lowercase normalized `{model}-{effort}` string, for example
+`chatgpt-5-5-high` or `claude-opus-4-7-xhigh`. Folder examples:
+`docs/chatgpt-5-5-high. anytype/` and
+`docs/claude-opus-4-7-xhigh. anytype/`.
+
+Each report folder must record the exact agent/model and reasoning effort,
+for example `chatgpt-5.5 high` or `claude-opus-4.7 xhigh`, in its `README.md`.
+Repeat the metadata in major reports when it helps compare multiple analyses.
+Do not overwrite another agent's report unless the user explicitly asks for
+that consolidation.
+
+When citing code, reference the submodule path and the pinned commit hash so
+findings remain auditable.
+
+Each `README.md` should make cross-agent comparison easy by showing the verdict,
+recommendation, Sparkle fit, multimodal fit, security posture, extensibility,
+and adoption effort.
+
+## 6. How to behave
+
+- **Be a researcher, not an implementer.** Default action is *read, analyse,
+  document*. Do not write product code in this repo unless explicitly asked.
+- **Cite everything.** Every claim about an upstream project must be
+  traceable to a file path, line number, commit hash, or release tag.
+- **Pin to a released version, fall back to a commit.** When analysing a
+  project, prefer pinning the submodule to a specific release tag (the
+  closest thing to a contract upstream offers). Only fall back to a raw
+  commit hash when the project does not publish tags. Either way, record
+  the exact reference you reviewed — findings rot; pinning makes them
+  auditable.
+- **Follow the research workflow.** Pin the upstream version, map the
+  architecture and indexing pipeline, perform the security review, evaluate
+  Sparkle and multimodal fit, then finish with the recommendation and
+  downstream adoption path.
+- **No hand-waving on security.** "Looks fine" is not a finding. Either
+  identify a concrete risk with a location, or state explicitly that a
+  given category was reviewed and no issues were found.
+- **Prefer Mermaid in Markdown** over external diagram tools, so diagrams
+  stay diffable.
+- **Surface uncertainty.** When evidence is thin or contradictory, say so.
+  An honest "unknown" is more valuable than a confident guess.
+- **Update, do not duplicate.** If a project has already been analysed,
+  amend the existing folder rather than starting a new one.
