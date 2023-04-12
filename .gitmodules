@@ -1,0 +1,3 @@
+[submodule "research/cocoindex"]
+	path = research/cocoindex
+	url = git@github.com:cocoindex-io/cocoindex.git
