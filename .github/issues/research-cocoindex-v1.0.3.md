@@ -41,24 +41,24 @@ Produce reports under
 `<agent-slug>` set to the lowercase normalized `{model}-{effort}` of the
 executing agent (e.g. `claude-opus-4.7-xhigh`):
 
-- [ ] `README.md` — executive summary, run metadata (model + effort), pinned
+- [x] `README.md` — executive summary, run metadata (model + effort), pinned
       ref, verdict matrix (Sparkle fit, multimodal fit, security posture,
       extensibility, adoption effort), links to the three reports.
-- [ ] `architecture.md` — §3.1 + §4.1. C4 context/container/component
+- [x] `architecture.md` — §3.1 + §4.1. C4 context/container/component
       diagrams in Mermaid, indexing pipeline end-to-end, storage backends,
       extension surfaces, runtime model, stack.
-- [ ] `security.md` — §3.2 + §4.2. Full code-level scan (not just
+- [x] `security.md` — §3.2 + §4.2. Full code-level scan (not just
       CVE/OSV/Dependabot echo), authn/z, trust boundaries, secrets,
       multi-tenant isolation, encryption, logging, release cadence.
       Each finding cites file + line at the pinned commit.
-- [ ] `applicability.md` — §3.3 + §4.3. Sparkle (S/P/A/R/K/L/E) mapping,
+- [x] `applicability.md` — §3.3 + §4.3. Sparkle (S/P/A/R/K/L/E) mapping,
       per-modality handling (text/image/audio/video — native vs.
       OCR/ASR/caption fallbacks), source identity / metadata / permissions
       / dedup / sync semantics preservation, embedding strategy and
       pluggability, license, governance, bus factor, adaptation effort,
       and a final **adopt / adopt-with-changes / monitor / reject**
       recommendation with reasoning.
-- [ ] (optional) `diagrams/`, `notes/` for extracted Mermaid sources and
+- [x] (optional) `diagrams/`, `notes/` for extracted Mermaid sources and
       transcripts.
 
 ## Acceptance criteria
