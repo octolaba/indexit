@@ -8,8 +8,8 @@ The repository for researching open-source projects related to indexing data sou
 
 ### CocoIndex
 
-CocoIndex is the first researched project in this repository. The analysis is
-pinned to `cocoindex-io/cocoindex` `v1.0.3`
+[CocoIndex](https://cocoindex.io/) is the first researched project
+in this repository. The analysis is pinned to `cocoindex-io/cocoindex` `v1.0.3`
 (`4432311228e4859201b457d3b6d978471692d0b1`) and was performed independently
 by two models:
 
