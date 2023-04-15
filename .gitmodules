@@ -1,3 +1,6 @@
 [submodule "research/cocoindex"]
 	path = research/cocoindex
 	url = git@github.com:cocoindex-io/cocoindex.git
+[submodule "research/qmd"]
+	path = research/qmd
+	url = git@github.com:tobi/qmd.git
