@@ -185,8 +185,8 @@ The repository separates **upstream code** from **agent-specific analysis**.
 - `research/<project-slug>/` — the upstream project itself, vendored as a
   **git submodule** pinned to a specific commit. Read-only from our side;
   do not commit changes inside it.
-- `docs/<agent-slug>. <project-slug>/` — one agent's analysis documents about
-  that project. The separator between `<agent-slug>` and `<project-slug>` is
+- `docs/<project-slug>. <agent-slug>/` — one agent's analysis documents about
+  that project. The separator between `<project-slug>` and `<agent-slug>` is
   exactly dot plus space: `. `. This allows multiple agents or model/effort
   combinations to produce separate perspectives on the same upstream project.
 
@@ -195,7 +195,7 @@ research/
   <project-slug>/        # git submodule → upstream repo (read-only)
 
 docs/
-  <agent-slug>. <project-slug>/
+  <project-slug>. <agent-slug>/
     README.md            # executive summary, run metadata, links to reports
     architecture.md      # §3.1 + §4.1
     security.md          # §3.2 + §4.2
@@ -237,8 +237,8 @@ dots inside model names, replacing spaces and other non-alphanumeric separators
 except dots with `-`, and collapsing repeated hyphens. For example,
 `gpt-5.5 high` becomes `gpt-5.5-high`, and `claude-opus-4.7 xhigh` becomes
 `claude-opus-4.7-xhigh`. Folder examples:
-`docs/gpt-5.5-high. anytype/` and
-`docs/claude-opus-4.7-xhigh. anytype/`.
+`docs/anytype. gpt-5.5-high/` and
+`docs/anytype. claude-opus-4.7-xhigh/`.
 
 > **Watch out for technical model IDs.** Anthropic spells the technical model
 > ID with hyphens (e.g. `claude-opus-4-7[1m]` in your system prompt) but the

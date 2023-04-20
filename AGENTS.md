@@ -185,8 +185,8 @@ The repository separates **upstream code** from **agent-specific analysis**.
 - `research/<project-slug>/` — the upstream project itself, vendored as a
   **git submodule** pinned to a specific commit. Read-only from our side;
   do not commit changes inside it.
-- `docs/<agent-slug>. <project-slug>/` — one agent's analysis documents about
-  that project. The separator between `<agent-slug>` and `<project-slug>` is
+- `docs/<project-slug>. <agent-slug>/` — one agent's analysis documents about
+  that project. The separator between `<project-slug>` and `<agent-slug>` is
   exactly dot plus space: `. `. This allows multiple agents or model/effort
   combinations to produce separate perspectives on the same upstream project.
 
@@ -195,7 +195,7 @@ research/
   <project-slug>/        # git submodule → upstream repo (read-only)
 
 docs/
-  <agent-slug>. <project-slug>/
+  <project-slug>. <agent-slug>/
     README.md            # executive summary, run metadata, links to reports
     architecture.md      # §3.1 + §4.1
     security.md          # §3.2 + §4.2
@@ -210,6 +210,25 @@ lowercase normalized `{model}-{effort}` string, for example
 `gpt-5.5-high` or `claude-opus-4.7-xhigh`. Folder examples:
 `docs/anytype. chatgpt-5.5-high/` and
 `docs/anytype. claude-opus-4.7-xhigh/`.
+
+Before a Codex agent creates or updates a research report folder, it must run
+the Codex runtime identity ritual. Run
+`sh .codex/scripts/codex-research-identity.sh` from the repository root and
+use the latest matching Codex `turn_context` for that cwd as the source of truth for
+`model`, `effort`, and `<agent-slug>`. Do not infer identity from the generic
+system prompt, examples in this file, previous report folders, provider
+branding, or `~/.codex/config.toml` unless the script reports that it had to
+fall back to config.
+
+After reading the script output, ask the user to confirm before creating the
+folder, using this structure:
+
+> I read Codex runtime as `model = <X>`, `effort = <Y>` from `<source>`. The
+> resulting `<agent-slug>` is `<x-y>`. Confirm or correct?
+
+If the script reports `confidence: fallback` or `confidence: none`, state that
+explicitly in the question and require the user to confirm or supply the
+missing value. Only proceed once the user has confirmed the runtime identity.
 
 Each report folder must record the exact agent/model and reasoning effort,
 for example `gpt-5.5-high` or `claude-opus-4.7-xhigh`, in its `README.md`.
