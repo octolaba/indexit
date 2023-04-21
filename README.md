@@ -18,6 +18,16 @@ by two models:
 - [Claude report](docs/cocoindex.%20claude-opus-4.7-high/README.md) —
   `claude-opus-4.7 high` static review covering the same research checklist.
 
-Both reports evaluate CocoIndex against the repository's two adoption goals:
-Sparkle consistency across heterogeneous sources and multimodal semantic
-indexing.
+### qmd
+
+[qmd](https://github.com/tobi/qmd) is the second researched project. The
+analysis is pinned to `tobi/qmd` `v2.1.0`
+(`65cd1b3fd02891d1ee0eefa751620918664fa321`) and was performed independently
+by two models at `xhigh` reasoning effort:
+
+- [GPT report](docs/qmd.%20gpt-5.5-xhigh/README.md) — `gpt-5.5 xhigh`
+  static review. Verdict: **reject** as the core downstream substrate;
+  monitor as a design reference for local hybrid markdown retrieval.
+- [Claude report](docs/qmd.%20claude-opus-4.7-xhigh/README.md) —
+  `claude-opus-4.7 xhigh` static review. Verdict: **monitor**, with a narrow
+  **adopt-with-changes** path if a Markdown-RAG sub-product is in scope.
