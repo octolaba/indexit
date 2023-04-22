@@ -4,3 +4,6 @@
 [submodule "research/qmd"]
 	path = research/qmd
 	url = git@github.com:tobi/qmd.git
+[submodule "research/mirage"]
+	path = research/mirage
+	url = git@github.com:strukto-ai/mirage.git
