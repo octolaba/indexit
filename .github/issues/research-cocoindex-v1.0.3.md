@@ -1,6 +1,6 @@
 ---
 title: "research: cocoindex@v1.0.3"
-state: open
+state: closed
 labels:
   - type/research
   - research/architecture
@@ -10,7 +10,7 @@ assignees: []
 milestone: null
 type: task
 ---
-# Research cocoindex v1.0.3
+# Research CocoIndex v1.0.3
 
 ## Subject
 
@@ -19,7 +19,7 @@ pinned to **`v1.0.3`** (commit
 [`4432311228e4859201b457d3b6d978471692d0b1`](https://github.com/cocoindex-io/cocoindex/commit/4432311228e4859201b457d3b6d978471692d0b1)),
 vendored at `research/cocoindex/`.
 
-Follow the research workflow defined in `CLAUDE.md` / `AGENTS.md` §3–§4.
+Follow the research workflow defined in `AGENTS.md` / `CLAUDE.md` §3–§6.
 
 ## Research constraints
 
@@ -58,8 +58,6 @@ executing agent (e.g. `claude-opus-4.7-xhigh`):
       pluggability, license, governance, bus factor, adaptation effort,
       and a final **adopt / adopt-with-changes / monitor / reject**
       recommendation with reasoning.
-- [x] (optional) `diagrams/`, `notes/` for extracted Mermaid sources and
-      transcripts.
 
 ## Acceptance criteria
 
@@ -79,7 +77,7 @@ executing agent (e.g. `claude-opus-4.7-xhigh`):
 ## References
 
 - Upstream repo: https://github.com/cocoindex-io/cocoindex
-- Pinned tag: `v1.0.3`
+- Pinned ref: `v1.0.3`
 - Pinned commit: `4432311228e4859201b457d3b6d978471692d0b1`
 - Submodule path: `research/cocoindex/`
-- Workflow: `CLAUDE.md` / `AGENTS.md` §3–§5
+- Workflow: `CLAUDE.md` / `AGENTS.md` §3–§6
