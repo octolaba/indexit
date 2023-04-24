@@ -31,3 +31,18 @@ by two models at `xhigh` reasoning effort:
 - [Claude report](docs/qmd.%20claude-opus-4.7-xhigh/README.md) —
   `claude-opus-4.7 xhigh` static review. Verdict: **monitor**, with a narrow
   **adopt-with-changes** path if a Markdown-RAG sub-product is in scope.
+
+### Mirage
+
+[Mirage](https://github.com/strukto-ai/mirage) is the third researched project.
+The analysis is pinned to `strukto-ai/mirage` `v0.0.1`
+(`8b99fb9247ecb40725d4718bac58e3bb230aad34`) and was performed independently
+by two models at `xhigh` reasoning effort:
+
+- [GPT report](docs/mirage.%20gpt-5.5-xhigh/README.md) — `gpt-5.5 xhigh`
+  static review. Verdict: **reject** as the core indexing/search engine;
+  **monitor** as a connector/VFS substrate.
+- [Claude report](docs/mirage.%20claude-opus-4.7-xhigh/README.md) —
+  `claude-opus-4.7 xhigh` static review. Verdict: **monitor**, with an
+  **adopt-with-changes** path as an embedded connector layer once daemon
+  auth, snapshot-load hardening, and SSH host-key defaults land upstream.

@@ -1,4 +1,4 @@
-# cocoindex — Analysis (claude-opus-4.7, high)
+# CocoIndex — Analysis (claude-opus-4.7, high)
 
 | Field          | Value                                                                                                       |
 | -------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -15,7 +15,7 @@
 
 ## TL;DR
 
-Cocoindex v1.0.3 is a **declarative incremental-indexing engine** built as a
+CocoIndex v1.0.3 is a **declarative incremental-indexing engine** built as a
 Rust core (Tokio + LMDB via heed) with PyO3 Python bindings and a CLI. The
 engine's reconcile/checkpoint model is a strong fit for indexit's "keep
 targets in sync with sources" requirement; the connector inventory covers
