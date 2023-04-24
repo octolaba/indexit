@@ -37,7 +37,7 @@ This task is read-only with respect to the upstream subject:
 ## Deliverables
 
 Produce reports under
-`docs/<agent-slug>. cocoindex/` (note the literal `. ` separator), with
+`docs/cocoindex. <agent-slug>/` (note the literal `. ` separator), with
 `<agent-slug>` set to the lowercase normalized `{model}-{effort}` of the
 executing agent (e.g. `claude-opus-4.7-xhigh`):
 
