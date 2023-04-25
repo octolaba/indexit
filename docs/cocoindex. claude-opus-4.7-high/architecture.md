@@ -1,4 +1,4 @@
-# cocoindex — Architecture
+# CocoIndex — Architecture
 
 | Field          | Value                                                                                                       |
 | -------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -17,7 +17,7 @@
 
 ## 1. Problem statement
 
-Cocoindex is a Rust-core / Python-binding framework for building **incrementally
+CocoIndex is a Rust-core / Python-binding framework for building **incrementally
 maintained indexes** over heterogeneous sources. The user describes the
 desired *target state* (what files, rows, vectors should exist downstream) as a
 function of source state, in plain Python; the engine performs change detection
@@ -39,7 +39,7 @@ and entity resolution.
 flowchart LR
     user["Operator<br/>(developer / data engineer)"]
     pyapp["User Python application<br/>(@coco.fn pipeline)"]
-    cli["cocoindex CLI"]
+    cli["CocoIndex CLI"]
     sources[("Sources:<br/>localfs · Postgres · Kafka<br/>Google Drive · S3 · OCI")]
     targets[("Targets:<br/>Postgres+pgvector · Qdrant<br/>LanceDB · SQLite+vec<br/>Turbopuffer · Neo4j<br/>FalkorDB · SurrealDB · Doris<br/>Kafka · localfs")]
     embed[("Embedding / LLM APIs<br/>OpenAI · Voyage · Cohere<br/>Bedrock · Ollama · vLLM<br/>(via LiteLLM, optional)")]
@@ -61,7 +61,7 @@ flowchart LR
 
 The user is the only human actor. There are no end-user-facing services: the
 framework runs as a library inside a process the operator controls (CLI or
-embedded). The Scarf telemetry edge is the *only* outbound call cocoindex
+embedded). The Scarf telemetry edge is the *only* outbound call CocoIndex
 itself originates without the user's pipeline asking for it
 (rust/core/src/telemetry/mod.rs:1–117); see security.md §B7 / §B8.
 
@@ -69,7 +69,7 @@ itself originates without the user's pipeline asking for it
 
 ## 3. C4 — Level 2: Containers
 
-In v1.0.3 cocoindex is a **single-process library plus CLI**, not a service.
+In v1.0.3 CocoIndex is a **single-process library plus CLI**, not a service.
 "Container" therefore corresponds to in-process modules with distinct
 responsibilities and process boundaries (CLI vs subprocess GPU runner).
 
@@ -268,7 +268,7 @@ A few details that are easy to miss from the README alone:
 
 ### What problem does the project solve, in one paragraph?
 
-Cocoindex provides a declarative programming model and reconciliation engine
+CocoIndex provides a declarative programming model and reconciliation engine
 for incremental indexes built from heterogeneous sources. The user defines a
 tree of *processing components* whose outputs are *target states* (rows,
 files, points, vectors). The engine fingerprints components, persists the
@@ -314,7 +314,7 @@ See §5 for the sequence diagram. End-to-end:
 | Graph target        | Neo4j; FalkorDB; SurrealDB.                                                                                                                                                                                                         |
 | Stream target       | Kafka.                                                                                                                                                                                                                              |
 | Blob/file target    | Local filesystem (`localfs.DirTarget`).                                                                                                                                                                                              |
-| Full-text search    | **Not provided as a first-class target.** Users can lean on Postgres FTS or external systems; cocoindex itself only exposes vector and KV-shaped targets.                                                                            |
+| Full-text search    | **Not provided as a first-class target.** Users can lean on Postgres FTS or external systems; CocoIndex itself only exposes vector and KV-shaped targets.                                                                            |
 
 ### Extension points and plugin surfaces
 

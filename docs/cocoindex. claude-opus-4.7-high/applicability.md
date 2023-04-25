@@ -1,4 +1,4 @@
-# cocoindex — Applicability for indexit
+# CocoIndex — Applicability for indexit
 
 | Field          | Value                                                                                                       |
 | -------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -14,7 +14,7 @@
 ## Bottom line
 
 **Verdict: adopt-with-changes**, scoped to the *engine + operator layer*.
-Use cocoindex as the incremental-reconciliation runtime and as a source-side
+Use CocoIndex as the incremental-reconciliation runtime and as a source-side
 connector library; do **not** rely on its built-in `ops/` for multimodal
 embedding (BYO models per modality), and budget concrete patch work for
 symlink containment, telemetry default-off, and adding a Sparkle-aware
@@ -37,7 +37,7 @@ metadata layer above the connector contract. Reasoning in §6.
 
 ## §C1. Sparkle (S/P/A/R/K/L/E) mapping
 
-Cocoindex has no first-class taxonomy. It has only:
+CocoIndex has no first-class taxonomy. It has only:
 
 * **Component paths** — opaque identifiers anchored at component declarations
   (`coco.component_subpath("process", filename)`,
@@ -50,23 +50,23 @@ Cocoindex has no first-class taxonomy. It has only:
 
 Mapping the Sparkle buckets onto this surface:
 
-| Bucket                                | Mapping in cocoindex v1.0.3                                                                                                                                                                                                       | Adoption work                                                                                                                                  |
+| Bucket                                | Mapping in CocoIndex v1.0.3                                                                                                                                                                                                       | Adoption work                                                                                                                                  |
 | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **S** — Stream (raw inbox)            | A natural fit: a "stream" is a source connector pointed at the inbox folder / Drive folder / Kafka topic. Cocoindex can sync without classifying; classification is just a no-op pipeline that emits per-item state.                | Define a `Stream` source group; one connector per channel; component path = `S/<channel>/<source_id>`.                                          |
-| **P** — Projects (time-bounded)       | Maps onto a time-anchored container target (e.g. one Postgres table per project, or a directory tree under `P/<project_slug>/`). Lifecycle (close/archive) is operator-driven; cocoindex itself has no project lifecycle.            | Use a project registry (separate table) with our own state machine; cocoindex consumes the registry.                                            |
+| **S** — Stream (raw inbox)            | A natural fit: a "stream" is a source connector pointed at the inbox folder / Drive folder / Kafka topic. CocoIndex can sync without classifying; classification is just a no-op pipeline that emits per-item state.                | Define a `Stream` source group; one connector per channel; component path = `S/<channel>/<source_id>`.                                          |
+| **P** — Projects (time-bounded)       | Maps onto a time-anchored container target (e.g. one Postgres table per project, or a directory tree under `P/<project_slug>/`). Lifecycle (close/archive) is operator-driven; CocoIndex itself has no project lifecycle.            | Use a project registry (separate table) with our own state machine; CocoIndex consumes the registry.                                            |
 | **A** — Areas (excluding Essentials)  | Topical containers; same shape as Projects but no end date. Same connector + path pattern.                                                                                                                                          | Same as P; differentiated by registry metadata, not engine.                                                                                    |
-| **R** — Resources (reference)         | Standard read-mostly indexing target. The strongest fit: cocoindex's vector-target story (Qdrant, LanceDB, pgvector, Turbopuffer) is essentially a reference index.                                                                | None framework-level.                                                                                                                          |
-| **K** — Knowledge (crystallised)      | No native concept of "internalised vs consumed". Workable as a separate target table with an explicit `is_crystallised` flag and provenance pointer; pipelines can re-classify into K based on annotation events.                   | Out-of-band promotion workflow; cocoindex provides idempotent re-sync.                                                                          |
+| **R** — Resources (reference)         | Standard read-mostly indexing target. The strongest fit: CocoIndex's vector-target story (Qdrant, LanceDB, pgvector, Turbopuffer) is essentially a reference index.                                                                | None framework-level.                                                                                                                          |
+| **K** — Knowledge (crystallised)      | No native concept of "internalised vs consumed". Workable as a separate target table with an explicit `is_crystallised` flag and provenance pointer; pipelines can re-classify into K based on annotation events.                   | Out-of-band promotion workflow; CocoIndex provides idempotent re-sync.                                                                          |
 | **L** — Legacy (archived)             | Tombstoning is a first-class engine concept (research/cocoindex/CLAUDE.md:114–124, rust/core/src/engine/execution.rs). To "archive", move source items out of the watched mount; the engine cleans up downstream. Or: explicit copy to `L/` mount and remove from `P/`/`A/`. | Define our archive operator as "remount source path under L/, drop from origin"; the engine's deletion propagation handles cleanup.            |
 | **E** — Essentials (identity layer)   | No special support; same shape as A/R but tagged. Acceptable.                                                                                                                                                                      | None framework-level.                                                                                                                           |
 
-**Where Sparkle bends.** None of S/P/A/R/K/L/E *collapse* under cocoindex's
+**Where Sparkle bends.** None of S/P/A/R/K/L/E *collapse* under CocoIndex's
 data model — the engine is intentionally taxonomy-agnostic. What is missing
 is a **sparkle-aware metadata layer**: source identity → bucket
 assignment, per-bucket retention policy, and a promotion/demotion
 workflow (e.g. R → K when crystallised, P → L when archived).
 
-That layer is a few hundred lines of Python on top of cocoindex's stable
+That layer is a few hundred lines of Python on top of CocoIndex's stable
 public API; it does **not** require a fork.
 
 **What does *not* survive without explicit work**:
@@ -112,7 +112,7 @@ or (c) upstream PRs.
 
 **Deduplication.** Per-source: connectors deduplicate by item ID (path,
 key, PK). Cross-source dedup is *not* engine-level; it must be a
-pipeline. Cocoindex ships an `entity_resolution` operator family
+pipeline. CocoIndex ships an `entity_resolution` operator family
 (`python/cocoindex/ops/entity_resolution/`) that uses FAISS plus
 optional LLM-based linking — useful as a building block for our
 cross-source dedup story but not a turn-key answer.
@@ -132,12 +132,12 @@ disappears between runs, the corresponding target rows/files are
 deleted. This is a real strength for our Legacy bucket transitions —
 "remove from S; appears in L" is a single operator action.
 
-**Conflict state.** Cocoindex does not model "conflict" as a first-class
+**Conflict state.** CocoIndex does not model "conflict" as a first-class
 state. Two simultaneous writers to the same target system on overlapping
 component paths would race; LMDB's single-writer transaction model
-serialises *one* cocoindex process, but two cocoindex processes pointed
+serialises *one* CocoIndex process, but two CocoIndex processes pointed
 at the same target collide at the target's level. Our deployment must
-treat the cocoindex process as the **single writer** for each target +
+treat the CocoIndex process as the **single writer** for each target +
 component-path subtree.
 
 ---
@@ -146,7 +146,7 @@ component-path subtree.
 
 The classification table demanded by §4.3:
 
-| Modality | Cocoindex framework support                                                                                                                                                              | First-class? | Strategy                                            |
+| Modality | CocoIndex framework support                                                                                                                                                              | First-class? | Strategy                                            |
 | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | --------------------------------------------------- |
 | Text     | `python/cocoindex/ops/sentence_transformers.py`, `python/cocoindex/ops/litellm.py`. Recursive splitter in `rust/ops_text` + Python wrapper `python/cocoindex/ops/text.py`.                  | **Yes**      | Native: text → vector via pluggable embedder.       |
 | Image    | **No first-party operator.** Examples (`examples/image_search/main.py`, `examples/image_search_colpali/main.py`) instantiate `transformers.CLIPModel` and `colpali_engine.ColPali` directly inside user `@coco.fn`. The framework only sees the resulting vectors. | No (BYO)     | Native multimodal *is achievable* (CLIP, ColPali shared-space embeddings) but the framework is uninvolved beyond schema declaration. |
@@ -154,7 +154,7 @@ The classification table demanded by §4.3:
 | Video    | None. `grep -ri "video\|mp4\|frame extraction\|whisper.*video\|ffmpeg" python/cocoindex/ rust/ops_text/` returns nothing in the framework. No example, no operator.                       | **No**       | Not supported. Would have to build entirely (frame extraction → image embedding + audio extraction → ASR + multimodal fusion). |
 | PDF      | No first-party PDF operator. Examples (`examples/pdf_embedding/`, `examples/pdf_to_markdown/`) use `Docling` in user code.                                                                  | No (BYO)     | Text-conversion fallback.                            |
 
-**Reading.** Cocoindex is **modality-neutral at the vector layer**
+**Reading.** CocoIndex is **modality-neutral at the vector layer**
 (`VectorSchema` + `MultiVectorSchema` accept any float-vector shape) and
 **text-first at the operator layer**. For images and PDFs, "supporting
 the modality" means "writing your own `@coco.fn` that calls a model and
@@ -167,10 +167,10 @@ The CLI ships `COCOINDEX_RUN_GPU_IN_SUBPROCESS`
 (`python/cocoindex/_internal/runner.py:172–199`) precisely to give those
 user-defined embedders an isolation knob.
 
-**Implication for our Goal 2.** Cocoindex satisfies the *plumbing*
+**Implication for our Goal 2.** CocoIndex satisfies the *plumbing*
 (stable identity, vector targets, deletion propagation, batching,
 reconciliation) but does **not** answer the modeling question for
-non-text modalities. Adopting cocoindex still leaves us with the
+non-text modalities. Adopting CocoIndex still leaves us with the
 "choose a multimodal embedder per modality" decision and the "wrap it
 in a `@coco.fn`" plumbing. Video is a true gap — building it would be
 real work.
@@ -201,7 +201,7 @@ real work.
   Python's import system is the registry.
 
 **Verdict.** Embedding is **the most pluggable surface in the
-framework**. We can plug in anything we want without touching cocoindex
+framework**. We can plug in anything we want without touching CocoIndex
 internals.
 
 ---
@@ -290,7 +290,7 @@ requirements.
 | Operator runbook + runbook tests                                                                    | Docs             | 2–3 days         |
 
 **Total floor (without video, with ~2 new connectors):** ~3–5 dev-weeks
-to a usable indexit MVP atop cocoindex.
+to a usable indexit MVP atop CocoIndex.
 
 **Modes of contribution.**
 
@@ -298,7 +298,7 @@ to a usable indexit MVP atop cocoindex.
   cannot tolerate the risk in production. Even then, the fork lives at
   the connector layer; we don't need to fork the engine.
 * **Wrapper** — primary mode. Most adaptation is "an indexit Python
-  package that imports cocoindex and adds Sparkle semantics."
+  package that imports CocoIndex and adds Sparkle semantics."
 * **Upstream PR** — appropriate for symlink containment, cargo-deny
   integration, and any new generic-purpose connector.
 * **Replace** — reserved for the case where we conclude during
@@ -316,11 +316,11 @@ to a usable indexit MVP atop cocoindex.
   choices, the vector schemas, or the target system contracts.
 * **Data migration.** All persistent state lives in external systems we
   control (Postgres, Qdrant, …) plus the LMDB checkpoint. Migrating
-  away from cocoindex preserves all indexed data; only the checkpoint
+  away from CocoIndex preserves all indexed data; only the checkpoint
   is lost (and a full re-index would rebuild it).
 * **License risk.** None — Apache-2.0.
 * **Vendor risk.** Bus factor as noted in §C6; mitigated by the wrapper
-  approach (we keep our domain logic outside cocoindex internals).
+  approach (we keep our domain logic outside CocoIndex internals).
 
 Exit cost is therefore **Low–Medium**: one-time orchestration rewrite,
 no data migration, no license cleanup.
@@ -331,7 +331,7 @@ no data migration, no license cleanup.
 
 > **Adopt-with-changes.**
 >
-> Use cocoindex v1.0.x as the runtime engine and as the source/target
+> Use CocoIndex v1.0.x as the runtime engine and as the source/target
 > connector library, behind an indexit wrapper that:
 >
 > 1. Adds the Sparkle taxonomy as a first-class metadata layer
@@ -344,7 +344,7 @@ no data migration, no license cleanup.
 > 5. Selects per-modality embedders explicitly (CLIP / ColPali /
 >    Docling / Whisper) and wraps them as `@coco.fn` operators.
 >
-> Do **not** plan video support against cocoindex until/unless we
+> Do **not** plan video support against CocoIndex until/unless we
 > commit to building it ourselves.
 >
 > Re-evaluate at the next major (`v1.1.x` or `v2.x`) if upstream lands

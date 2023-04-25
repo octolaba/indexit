@@ -61,7 +61,7 @@ executing agent (e.g. `claude-opus-4.7-xhigh`):
 
 ## Acceptance criteria
 
-- All claims about cocoindex cite a path inside `research/cocoindex/` and
+- All claims about CocoIndex cite a path inside `research/cocoindex/` and
   reference commit `4432311228e4859201b457d3b6d978471692d0b1` (or a file
   within `v1.0.3`).
 - Every question in §4.1, §4.2, §4.3 is answered explicitly; non-applicable

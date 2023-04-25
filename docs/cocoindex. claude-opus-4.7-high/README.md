@@ -82,13 +82,13 @@ Pulled from [`applicability.md` §C7](applicability.md#c7-concrete-adaptation-ef
 
 ## Method notes
 
-- All claims about cocoindex cite a path inside `research/cocoindex/` at
+- All claims about CocoIndex cite a path inside `research/cocoindex/` at
   the pinned commit. Where a category was reviewed and produced no
   finding, that is recorded explicitly.
 - The security review goes beyond CVE/OSV/Dependabot per CLAUDE.md §3.2:
   F-1 (symlink), F-2 (telemetry default-on), F-7 (state-at-rest umask)
   are not in any public vulnerability database — they are behaviours of
   the codebase as it stands.
-- This analyst did not run any cocoindex code, examples, or tests; the
+- This analyst did not run any CocoIndex code, examples, or tests; the
   upstream `CLAUDE.md` and `README.md` were treated as documentation to
   be inspected and cited, not as instructions to be executed.

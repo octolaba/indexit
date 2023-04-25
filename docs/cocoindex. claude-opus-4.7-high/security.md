@@ -1,4 +1,4 @@
-# cocoindex — Security review
+# CocoIndex — Security review
 
 | Field          | Value                                                                                                       |
 | -------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -8,7 +8,7 @@
 | Vendored at    | `research/cocoindex/`                                                                                       |
 | Analyst        | `claude-opus-4.7` (1M-context, effort: high)                                                               |
 | Scope          | §3.2 + §4.2 of `CLAUDE.md` / `AGENTS.md`. Static, read-only review. No fuzzing, no execution, no network.   |
-| Threat model   | Single-user developer or batch operator running cocoindex against directories, databases, and SaaS sources they own or are authorised to read. **Not** a multi-tenant or hostile-user threat model — cocoindex does not attempt to provide one. |
+| Threat model   | Single-user developer or batch operator running CocoIndex against directories, databases, and SaaS sources they own or are authorised to read. **Not** a multi-tenant or hostile-user threat model — CocoIndex does not attempt to provide one. |
 
 > **Frame.** This is the answer to the §4.2 questionnaire plus an
 > independent code-level scan beyond CVE/OSV/Dependabot. Where a category
@@ -42,7 +42,7 @@ unrestricted (`§B3-pickle` — `_RestrictedUnpickler` allowlist holds).
 
 ## §B1. Authentication & authorisation
 
-**No HTTP server is started by cocoindex v1.0.3.** The only `axum::serve(...)`
+**No HTTP server is started by CocoIndex v1.0.3.** The only `axum::serve(...)`
 call is inside a `#[cfg(test)]` block that spins up a mock HTTP server for
 the telemetry unit tests (rust/core/src/telemetry/mod.rs:166–183). Every other
 axum reference is type-only:
@@ -61,7 +61,7 @@ discussion in older docs is v0 history, not v1 reality. Recorded as
 bytes in the wheel, dependency-graph attack surface) without producing a
 runtime endpoint.
 
-The only outbound network call cocoindex *itself* originates is the
+The only outbound network call CocoIndex *itself* originates is the
 telemetry POST (see §B7). Everything else (database connections,
 embedding APIs, Google Drive, S3, OCI, Kafka) is initiated by user-defined
 pipelines using credentials the operator supplies.
@@ -106,7 +106,7 @@ Three call sites:
    only calls `pickle.dumps(...)`; never `loads`. Bytes are hashed for cache
    keys, never re-instantiated. No risk.
 2. **State / cache deserialisation** — `python/cocoindex/_internal/serde.py:7,128–195`.
-   This is the load-bearing one. Cocoindex implements
+   This is the load-bearing one. CocoIndex implements
    `_RestrictedUnpickler(pickle.Unpickler)` whose `find_class()` consults
    an explicit allowlist `_UNPICKLE_SAFE_GLOBALS`. The allowlist is bootstrapped
    from a hard-coded set of built-ins (`bool, int, float, complex, str, bytes,
@@ -125,7 +125,7 @@ Three call sites:
    (line 199) are unrestricted. **Logged as F-3.** Both ends of the pipe
    are children of the same user, so the realistic threat is a local
    process injecting bytes into the pipe — out of scope for the default
-   threat model. Worth tightening only if cocoindex ever lets the
+   threat model. Worth tightening only if CocoIndex ever lets the
    subprocess be reached over a network socket.
 
 ### §B3-SQL — SQL injection
@@ -158,8 +158,8 @@ Concrete consequence:
   dereferences to `/etc/passwd`. The bytes are then handed to the user
   pipeline and indexed into whatever target the pipeline declares.
 * If the watched directory is writeable by an account distinct from the
-  cocoindex operator (e.g. a "drop folder"), this is a straightforward
-  exfiltration primitive bounded only by what the cocoindex process can
+  CocoIndex operator (e.g. a "drop folder"), this is a straightforward
+  exfiltration primitive bounded only by what the CocoIndex process can
   read.
 
 Logged as **F-1**. This is *not* in CVE/OSV/Dependabot — it is a behaviour
@@ -182,11 +182,11 @@ user input. **Reviewed, no issues found.**
 
 ## §B4. Secrets & credentials
 
-* **Provisioning** — credentials reach cocoindex through environment
+* **Provisioning** — credentials reach CocoIndex through environment
   variables and `.env` files loaded by `python/cocoindex/cli.py`
   (e.g. `--env-file`). Examples lean on `POSTGRES_URL`, `OPENAI_API_KEY`,
   `QDRANT_API_KEY`, `GOOGLE_DRIVE_*`, etc.
-* **Storage at rest** — credentials are *not* persisted by cocoindex
+* **Storage at rest** — credentials are *not* persisted by CocoIndex
   itself. The LMDB state DB stores fingerprints, target-state
   descriptors, and tombstones; no DSNs or API keys are written there.
 * **Logging** — no credential strings are logged in the inspected
@@ -198,7 +198,7 @@ user input. **Reviewed, no issues found.**
   manager integration.
 
 **Reviewed, no concrete leakage found.** Operators should still treat the
-shell that launches cocoindex (and any `.env` file it reads) as a
+shell that launches CocoIndex (and any `.env` file it reads) as a
 secret store.
 
 ---
@@ -215,7 +215,7 @@ anywhere in `rust/` or `python/`. **Reviewed, no issues found.**
 
 ## §B6. Multi-tenant / multi-user isolation
 
-Cocoindex v1.0.3 has **no tenant model**. The state DB is a single LMDB
+CocoIndex v1.0.3 has **no tenant model**. The state DB is a single LMDB
 env, the engine is single-process, and all credentials come from the
 operator's environment. Co-tenancy must be implemented externally by
 running separate processes with separate `~/.cocoindex` directories.
@@ -311,7 +311,7 @@ can of course log anything; that is the operator's responsibility.
 ## §B-rust-unsafe — Unsafe Rust
 
 `grep -rn "\bunsafe \b\|\bunsafe{" rust/ --include="*.rs"` (with comment
-filtering) returns **0 matches** in cocoindex's own code. PyO3 itself
+filtering) returns **0 matches** in CocoIndex's own code. PyO3 itself
 contains internal unsafe, of course, but the boundary is the audited
 PyO3 surface, not first-party `unsafe` blocks. **Reviewed, no
 first-party unsafe.**
@@ -322,13 +322,13 @@ first-party unsafe.**
 
 `@coco.fn` user code runs in the host Python interpreter (or, optionally,
 a forked subprocess for GPU work, `python/cocoindex/_internal/runner.py:172–199`).
-There is **no** CPU/memory/wall-time limit enforced by cocoindex. A
+There is **no** CPU/memory/wall-time limit enforced by CocoIndex. A
 runaway embed step, a memory leak in a user function, or an infinite
-loop will hang or crash the entire cocoindex process. Recovery is via
+loop will hang or crash the entire CocoIndex process. Recovery is via
 process restart, after which the engine resumes from the last
 checkpoint thanks to per-component fingerprinting.
 
-This is a deliberate design point — cocoindex is positioned as a
+This is a deliberate design point — CocoIndex is positioned as a
 trusted-code framework — and is consistent with comparable tools
 (LangChain, LlamaIndex, Haystack). It is recorded as **F-4** because
 any deployment that runs *third-party* pipelines (e.g. tenant-uploaded
@@ -352,7 +352,7 @@ re-index. They cannot escalate to RCE through the restricted unpickler,
 but they can DoS the indexing pipeline.
 
 Recorded as **F-7** (informational, by design): operators who run
-cocoindex on shared hosts should chmod the state directory and the
+CocoIndex on shared hosts should chmod the state directory and the
 `.env` files together as one secret-sensitive set.
 
 ---
@@ -406,9 +406,9 @@ cocoindex on shared hosts should chmod the state directory and the
 
 Ordered by effort × impact:
 
-1. **Default-disable telemetry.** Whatever wraps cocoindex (a fork, a
+1. **Default-disable telemetry.** Whatever wraps CocoIndex (a fork, a
    service, or a CLI subcommand) should set
-   `COCOINDEX_DISABLE_USAGE_TRACKING=1` before any cocoindex import
+   `COCOINDEX_DISABLE_USAGE_TRACKING=1` before any CocoIndex import
    that initialises the global. Track this as part of the adoption
    ticket. (F-2)
 2. **Patch or wrap the localfs walker.** Either upstream a
@@ -424,7 +424,7 @@ Ordered by effort × impact:
    in depth.
 6. **Treat user `@coco.fn` code as trusted** for the foreseeable future.
    If we ever expose it to third-party plugin authors, plan for a
-   container-level sandbox; cocoindex itself will not provide one.
+   container-level sandbox; CocoIndex itself will not provide one.
    (F-4)
 
 These translate directly into the adoption work itemised in
