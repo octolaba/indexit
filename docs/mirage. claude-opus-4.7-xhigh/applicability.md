@@ -12,8 +12,8 @@ omitted.
 
 The headline answer is set up-front: **Mirage is not an indexer. It is a
 unified VFS for AI agents.** The applicability question therefore
-reduces to: "could mirage serve as a *connector layer* underneath an
-indexer that we build?" — which is a fairer question than "does mirage
+reduces to: "could Mirage serve as a *connector layer* underneath an
+indexer that we build?" — which is a fairer question than "does Mirage
 solve our indexing problem?" (it does not).
 
 ---
@@ -24,22 +24,22 @@ solve our indexing problem?" (it does not).
 
 The Sparkle taxonomy classifies *items* into S/P/A/R/K/L/E. Mirage
 classifies nothing — it exposes *paths*. So the Sparkle question becomes
-"can the indexer that consumes mirage preserve the distinctions Sparkle
+"can the indexer that consumes Mirage preserve the distinctions Sparkle
 needs?".
 
 | Bucket | Maps onto a Mirage concept? | Loss / gain |
 | --- | --- | --- |
 | **S** Stream | Yes — every remote `Resource` (Slack, Email, Discord, Telegram, GitHub Issues, Linear) is naturally a Stream source mounted under `/<prefix>/` | Mirage does not deduplicate cross-source streams; same item appearing in Slack DM and email is two different paths |
-| **P** Projects | Out of scope for mirage | The indexer must add this layer; mirage carries no project lifecycle field |
-| **A** Areas | Out of scope for mirage | Same as above |
+| **P** Projects | Out of scope for Mirage | The indexer must add this layer; Mirage carries no project lifecycle field |
+| **A** Areas | Out of scope for Mirage | Same as above |
 | **R** Resources | Indirectly — `GDocsResource`, `GSheetsResource`, `GDriveResource`, `NotionResource`, `LinearResource` provide Resource-flavoured backends | Filesystem flattening loses Notion's block hierarchy and GDoc revision history beyond what `FileStat.extra` carries |
-| **K** Knowledge | **No mapping.** "Crystallised expertise" is a *user-internalised* state, not a source feature | Indexer-side concern; mirage is neutral |
-| **L** Legacy | No archival semantics in mirage | Indexer-side concern |
+| **K** Knowledge | **No mapping.** "Crystallised expertise" is a *user-internalised* state, not a source feature | Indexer-side concern; Mirage is neutral |
+| **L** Legacy | No archival semantics in Mirage | Indexer-side concern |
 | **E** Essentials | No identity-layer concept | Indexer-side concern |
 
 **Verdict on the taxonomy.** Mirage cleanly serves S and (loosely) R as
 *source* layers. P/A/K/L/E are problems for the indexer that *consumes*
-mirage. There is no friction with the taxonomy because mirage refuses to
+Mirage. There is no friction with the taxonomy because Mirage refuses to
 model bucket membership at all — the boundary stays clean.
 
 ### 1.2. Source identity preservation
@@ -65,10 +65,10 @@ the upstream onto a filesystem. Examples:
 * **Email.** Mailboxes become folders, messages files. Per-message
   identity is whatever path the resource picks (typically the IMAP UID).
 
-**Implication for Sparkle.** The indexer that wraps mirage can rely on
+**Implication for Sparkle.** The indexer that wraps Mirage can rely on
 the path being stable enough to use as a key for its own dedup/lineage
 layer, but cross-source dedup (same article in Slack thread + Notion +
-email) has to come from content fingerprinting **above** mirage.
+email) has to come from content fingerprinting **above** Mirage.
 
 ### 1.3. Metadata preservation
 
@@ -91,7 +91,7 @@ In practice this means:
 | Email | UID | thread relations (X-Refs / In-Reply-To not normalised), spam labels |
 
 **Sparkle implication.** If our indexer needs *any* of the lost
-metadata, mirage will require either custom commands per resource (its
+metadata, Mirage will require either custom commands per resource (its
 public extension surface — see architecture §7) or post-hoc enrichment
 above the filesystem layer.
 
@@ -105,9 +105,9 @@ There is no user model, no per-item ACL surfacing, no
 
 **Sparkle implication.** A Sparkle-aware indexer that needs to honour
 upstream permissions ("don't index files only Bob can see") cannot
-delegate to mirage. It must consult the upstream itself, or run mirage
+delegate to Mirage. It must consult the upstream itself, or run Mirage
 as the same identity for which it is doing the indexing — i.e., one
-mirage instance per identity.
+Mirage instance per identity.
 
 ### 1.5. Deduplication
 
@@ -118,9 +118,9 @@ Two paths pointing to the same upstream object cache twice.
 ETag) lets `ConsistencyPolicy.ALWAYS` re-stat for freshness, but
 fingerprints are not used for cross-resource dedup.
 
-**Sparkle implication.** Dedup must happen above mirage. This is
+**Sparkle implication.** Dedup must happen above Mirage. This is
 acceptable — most indexers do their own content dedup anyway — but it
-means mirage cannot itself answer "is this the same thing in two
+means Mirage cannot itself answer "is this the same thing in two
 different sources?".
 
 ### 1.6. Sync / update / conflict semantics
@@ -138,9 +138,9 @@ different sources?".
   vector clock, no optimistic-lock primitives.
 
 **Sparkle implication.** An indexer that wants real-time consistency
-must drive mirage with `ConsistencyPolicy.ALWAYS` and accept the
+must drive Mirage with `ConsistencyPolicy.ALWAYS` and accept the
 per-dispatch stat round-trip; for a reactive index (incremental update
-on upstream changes), mirage offers nothing — the indexer must wire its
+on upstream changes), Mirage offers nothing — the indexer must wire its
 own webhooks / pollers.
 
 ### 1.7. Net Sparkle assessment
@@ -153,7 +153,7 @@ own webhooks / pollers.
   surfacing, push-based sync, and any actual *index* that supports
   search.
 
-The Sparkle taxonomy is **not contradicted** by mirage; it simply isn't
+The Sparkle taxonomy is **not contradicted** by Mirage; it simply isn't
 addressed. Compatibility is "neutral", not "supportive".
 
 ---
@@ -168,7 +168,7 @@ multimodal pipeline.** Verified by inspection of
 no `clip`, no `chroma`, no `qdrant`, no `pgvector`, no `openai-embeddings`
 helper, no `cohere`, no `voyageai`. The optional `audio` extra brings
 `sherpa-onnx` (offline ASR), `av`, and `tinytag`; that is the *only*
-non-text modality with anything resembling extraction logic in mirage
+non-text modality with anything resembling extraction logic in Mirage
 itself, and it is a text-conversion fallback (audio → transcript).
 
 | Modality | Mirage built-in path | Native multimodal? |
@@ -222,7 +222,7 @@ Both are **possible but ad-hoc**. Mirage is not designed for either.
 * Video: no support.
 * Embeddings / vector search: **absent.**
 
-For Goal 2 specifically, mirage has roughly the same value as `boto3`:
+For Goal 2 specifically, Mirage has roughly the same value as `boto3`:
 it gets the bytes to you reliably. The semantic and multimodal layers
 must be built above it.
 
@@ -245,7 +245,7 @@ must be built above it.
 | Langfuse, Paperclip | core / extras | Niche / observability |
 
 22 backends covers most of the connectors a Sparkle-style index would
-want. The **breadth** is mirage's strongest selling point relative to
+want. The **breadth** is Mirage's strongest selling point relative to
 hand-rolling a connector layer.
 
 ---
@@ -289,13 +289,13 @@ Three plausible integration shapes, in order of cost:
 | Shape | What we'd do | Effort |
 | --- | --- | --- |
 | **Wrapper / consumer** (recommended baseline) | Use `Workspace` as a library, call `read_bytes` / `readdir` / per-resource search-pushdown commands from our indexer. Build embeddings, vector store, Sparkle classifier on top. Bring our own auth model. | **Low–Medium**: 1–2 weeks for an MVP that pulls from 3–4 mounts; per-modality extractors are the long tail |
-| **Plugin / fork** | Add an "embed" command and a vector-store cache as new mirage extension surfaces; keep mirage's daemon as the I/O process. | **Medium**: 3–6 weeks. We'd own a fork until the upstream design stabilises |
+| **Plugin / fork** | Add an "embed" command and a vector-store cache as new Mirage extension surfaces; keep Mirage's daemon as the I/O process. | **Medium**: 3–6 weeks. We'd own a fork until the upstream design stabilises |
 | **Upstream contribution** | Land a "search-pushdown protocol" + "embedder resource" PR upstream. The plans dir already drafts a `search-pushdown-multipath` design (`research/mirage/docs/plans/2026-04-26-search-pushdown-multipath.md`). | **High**: needs maintainer alignment, alpha surface stability, and review of CLA / governance |
 
-**Exit cost**, should mirage stall or pivot, is a function of how
+**Exit cost**, should Mirage stall or pivot, is a function of how
 deeply we lean on it:
 
-* If we use mirage only as a connector library (Shape 1): **Low**.
+* If we use Mirage only as a connector library (Shape 1): **Low**.
   Replacing the layer means rewriting per-source `read_bytes`/`stat`
   glue — irritating but bounded; ~2 weeks per backend cluster.
 * If we run the daemon (Shape 1.5) and rely on `Workspace.execute`:
@@ -309,7 +309,7 @@ deeply we lean on it:
 ## 7. Operational red flags for our context
 
 These come from the security review (`security.md`), focused on what
-matters if we *adopt* mirage:
+matters if we *adopt* Mirage:
 
 1. **No daemon auth (security §3.1).** Either rebuild the runtime
    inside our own service that wraps `Workspace` directly — bypassing
@@ -338,7 +338,7 @@ factored into the integration plan.
   sources. Building this from scratch is a lot of months.
 * **Familiar UX for agents.** The "agents already speak bash" thesis is
   genuinely useful; if our future indexer surfaces a search UI to an
-  agent, mirage's `Workspace.execute` is a natural sandbox.
+  agent, Mirage's `Workspace.execute` is a natural sandbox.
 * **Cache + freshness are correct.** The path-keyed file cache and the
   TTL'd index cache are simple, predictable, and Redis-backed for
   multi-replica deployments.
@@ -346,7 +346,7 @@ factored into the integration plan.
   building block for "freeze the state before a destructive change",
   even if v0.0.1's tar exporter has the §3.4 / §3.8 issues.
 * **VFP capability declarations.** Even unimplemented, the type surface
-  in `vfp/` is a thoughtful artefact: it tells you what mirage thinks
+  in `vfp/` is a thoughtful artefact: it tells you what Mirage thinks
   *should* be the contract between an LLM tool host and the VFS, and
   matches the operations we'd want to advertise from any indexer-on-top.
 * **Cross-language parity.** Python + TS implementations means embed
@@ -368,9 +368,9 @@ factored into the integration plan.
    resolved tree.
 4. **Wrap `execute` with a policy gate** that strips `native=True` and
    sanitises the agent-supplied command before passing it through.
-5. **Build the indexer above mirage.** Use mirage purely for
+5. **Build the indexer above Mirage.** Use Mirage purely for
    `readdir`/`stat`/`read_bytes`. Run our own embedder, our own vector
-   store, our own Sparkle classifier. Keep mirage as a *source layer*.
+   store, our own Sparkle classifier. Keep Mirage as a *source layer*.
 6. **Watch upstream.** Track the issues for: daemon auth, snapshot
    hardening, search-pushdown protocol, audio/image extraction
    surface. Re-evaluate at the next minor release.
@@ -393,7 +393,7 @@ factored into the integration plan.
   as long as we use it via the SDK rather than the daemon.
 * **Why not "adopt-with-changes" right now.** The daemon's auth gap,
   the snapshot-load traversal, the SSH host-key default, and the
-  three-commit history place mirage on the wrong side of "trust this
+  three-commit history place Mirage on the wrong side of "trust this
   enough to depend on it for a product feature". Bus-factor 1 + alpha
   + open critical-severity findings = monitor.
 * **Why not "reject".** The architecture is fundamentally sound, the
@@ -411,7 +411,7 @@ factored into the integration plan.
 ### Adoption shape if we eventually flip to *adopt-with-changes*
 
 * Use `Workspace` SDK in our process. Skip the daemon.
-* Vendor mirage as a git submodule pinned to a tag.
+* Vendor Mirage as a git submodule pinned to a tag.
 * Wrap `execute` with a policy gate.
 * Allowlist the resources we trust.
 * Watch the security advisory channel.

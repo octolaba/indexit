@@ -28,7 +28,7 @@ cache" backend choices are RAM and Redis
 (`research/mirage/python/mirage/cache/index/__init__.py`,
 `research/mirage/python/mirage/cache/index/store.py`,
 `research/mirage/python/mirage/cache/file/__init__.py`). Re-read
-§3.1.4.1 of the issue against that fact: applying mirage to indexit's
+§3.1.4.1 of the issue against that fact: applying Mirage to indexit's
 goals means treating it as a **source-abstraction layer** that an
 indexer could sit on top of, not as the indexer itself.
 
@@ -71,7 +71,7 @@ C4Context
 
 **Trust note for the diagram.** The agent in the top-left is treated as a
 *tool consumer*, not as a *trusted user*. Anything the agent emits to
-mirage's `execute()` ends up either parsed by tree-sitter-bash and run
+Mirage's `execute()` ends up either parsed by tree-sitter-bash and run
 through the in-process VFS dispatcher, or — when `native=True` — dropped
 straight into `asyncio.create_subprocess_shell` on the daemon host
 (`research/mirage/python/mirage/workspace/native.py:20-42`). That makes
@@ -224,7 +224,7 @@ C4Component
   Default observer resource is RAM but the constructor accepts any
   `BaseResource` — including `DiskResource`. **stdin, stdout, command
   text are stored verbatim** (line 80-91). This is the single biggest
-  privacy surface in mirage; see `security.md` finding §3.13.
+  privacy surface in Mirage; see `security.md` finding §3.13.
 * **`JobTable`** (`research/mirage/python/mirage/shell/job_table.py`)
   models bash background jobs (`cmd &`) for FUSE/native paths.
 * **VFP** (`research/mirage/python/mirage/vfp/`) is the closest thing
@@ -241,7 +241,7 @@ C4Component
 
 ## 5. The "indexing" pipeline (or rather: the read pipeline)
 
-There is no semantic indexing pipeline in mirage. The closest analogue
+There is no semantic indexing pipeline in Mirage. The closest analogue
 is the **read pipeline through the cache**, which I mapped end-to-end:
 
 ```mermaid

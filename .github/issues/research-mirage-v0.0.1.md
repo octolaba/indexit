@@ -61,7 +61,7 @@ executing agent (e.g. `claude-opus-4.7-xhigh`):
 
 ## Acceptance criteria
 
-- All claims about mirage cite a path inside `research/mirage/` and
+- All claims about Mirage cite a path inside `research/mirage/` and
   reference commit `8b99fb9247ecb40725d4718bac58e3bb230aad34` (or a file
   within `v0.0.1`).
 - Every question in §4.1, §4.2, §4.3 is answered explicitly; non-applicable

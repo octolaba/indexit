@@ -42,7 +42,7 @@ on top of, not the indexer itself.
 
 | Dimension | Verdict | Notes |
 | --- | --- | --- |
-| **Sparkle fit** | **Neutral** | Cleanly serves Stream + Resources backends as mounts; does not classify, dedup, or surface upstream ACLs. The bucket distinctions S/P/A/R/K/L/E remain a problem for the indexer above mirage |
+| **Sparkle fit** | **Neutral** | Cleanly serves Stream + Resources backends as mounts; does not classify, dedup, or surface upstream ACLs. The bucket distinctions S/P/A/R/K/L/E remain a problem for the indexer above Mirage |
 | **Multimodal fit** | **Poor** (text/structured only) | No native multimodal embeddings. Audio is handled via offline ASR (sherpa-onnx text fallback). Image / PDF are byte-level reads. Video unsupported |
 | **Security posture** | **Alpha — exploitable in default daemon mode** | Daemon HTTP API is unauthenticated despite client-side token plumbing; `native=true` execute is raw `subprocess_shell`; `DiskResource.load_state` has a path-traversal in snapshot reload; SSH defaults to `known_hosts=None` (MITM). Runtime disk path-traversal is correctly defended. See `security.md` |
 | **Extensibility** | **Strong** | Public surfaces: Resource registry, Command registry, Cache stores, Index stores, Observer resource, Agent SDK adapters. Backwards compatibility explicitly *not* committed at this stage |
@@ -62,7 +62,7 @@ and a second maintainer. Re-evaluate at v0.1.x.
 Adoption shape if we eventually flip to **adopt-with-changes**: embed
 the `Workspace` SDK in our own service (skip the daemon entirely),
 allowlist resources, wrap `execute` with a policy gate that strips
-`native=True`, override SSH `known_hosts`, vendor mirage as a git
+`native=True`, override SSH `known_hosts`, vendor Mirage as a git
 submodule pinned to a tag. Detail in `applicability.md` §9.
 
 ## Acceptance-criteria self-check

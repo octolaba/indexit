@@ -140,7 +140,7 @@ client sends are simply discarded.
 2. `MIRAGE_DAEMON_URL` overrides the URL the *client* uses, but the
    *daemon* binds wherever its uvicorn invocation tells it to. Anyone
    running `uvicorn mirage.cli.server_factory:app --host 0.0.0.0`,
-   port-forwarding the loopback port, or running mirage inside a
+   port-forwarding the loopback port, or running Mirage inside a
    container exposed to a network — gets full unauth.
 
 **Fix.** Read `MIRAGE_AUTH_TOKEN` in `server_factory.py`, install a
@@ -290,7 +290,7 @@ return await asyncssh.connect(**_connect_kwargs(config))
 no `~/.ssh/config` consultation. `SSHConfig.known_hosts` defaults to
 `None` (`research/mirage/python/mirage/resource/ssh/ssh.py:67-77`).
 
-**Impact.** Every SSH connection mirage makes is MITM-able by anyone on
+**Impact.** Every SSH connection Mirage makes is MITM-able by anyone on
 the network path between the daemon and the SSH host. Credentials sent
 over channel (private-key auth via `client_keys=[identity_file]`,
 line 56-57) are not exposed, but the *target* of those credentials is —
@@ -612,7 +612,7 @@ reported as either a concrete code-level finding or an explicit
   * Daemon: the trust boundary is the OS user the daemon runs as. The
     HTTP API treats every caller as that user.
   * FUSE: trust boundary is the OS — anyone with read on the FUSE
-    mountpoint can read mirage's view.
+    mountpoint can read Mirage's view.
 * **Multi-tenant isolation.** Not provided. Workspaces share the same
   daemon process, the same OS user, the same FUSE mountpoint, the same
   cache pools. There is *namespacing* via mount prefixes and
