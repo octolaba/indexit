@@ -1,4 +1,4 @@
-# qmd v2.1.0 — Architecture
+# QMD v2.1.0 — Architecture
 
 | Field         | Value                                                                                                       |
 | ------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -13,7 +13,7 @@ commit.
 
 ## A1. Problem statement (one paragraph)
 
-qmd is an **on-device hybrid search engine over markdown corpora**. It indexes
+QMD is an **on-device hybrid search engine over markdown corpora**. It indexes
 collections of `.md` files, builds a content-addressable store with both a
 BM25 (SQLite FTS5) keyword index and a sqlite-vec dense vector index, and
 exposes search via a CLI, an SDK, and an MCP (Model Context Protocol) server.
@@ -29,13 +29,13 @@ infrastructure (`research/qmd/README.md:5`,
 
 ```mermaid
 C4Context
-    title qmd v2.1.0 — System Context
+    title QMD v2.1.0 — System Context
 
     Person(user, "Knowledge worker", "Indexes own markdown notes")
     Person(agent, "LLM agent", "Claude / agent calling MCP tools")
 
     System_Boundary(machine, "User's machine") {
-        System(qmd, "qmd", "On-device hybrid search engine for markdown")
+        System(qmd, "QMD", "On-device hybrid search engine for markdown")
         SystemDb(idx, "~/.cache/qmd/index.sqlite", "FTS5 + sqlite-vec + meta")
         SystemDb(models, "~/.cache/qmd/models/", "GGUF model cache")
         SystemDb(cfg, "~/.config/qmd/index.yml", "Collections + contexts")
@@ -55,10 +55,10 @@ C4Context
 
 Key trust boundaries:
 
-- **Filesystem ↔ qmd process.** qmd runs as the invoking user; it reads
+- **Filesystem ↔ QMD process.** QMD runs as the invoking user; it reads
   any file the user can read, including symlinked targets that match the
   glob (see [`security.md`](security.md) F-2).
-- **YAML / SQLite store_collections ↔ qmd update.** A `update:` shell
+- **YAML / SQLite store_collections ↔ `qmd update`.** A `update:` shell
   command stored in the YAML or in the `store_collections.update_command`
   column is `bash -c`-executed when `qmd update` runs
   (`src/cli/qmd.ts:559`). Whoever can write those files can run code as
@@ -76,11 +76,11 @@ Key trust boundaries:
 
 ```mermaid
 C4Container
-    title qmd v2.1.0 — Containers
+    title QMD v2.1.0 — Containers
 
     Person(user, "User / agent")
 
-    Container_Boundary(qmd, "qmd (single Node/Bun process)") {
+    Container_Boundary(qmd, "QMD (single Node/Bun process)") {
         Container(cli, "CLI", "TypeScript", "src/cli/qmd.ts — argument parsing, output formatting, command dispatch")
         Container(sdk, "SDK", "TypeScript", "src/index.ts — createStore() public API")
         Container(mcp, "MCP server", "TypeScript", "src/mcp/server.ts — stdio + Streamable HTTP")
@@ -121,7 +121,7 @@ flowchart LR
     subgraph FS["Filesystem"]
         col[Collection root /<br/>**/*.md]
     end
-    subgraph Index["qmd index pipeline"]
+    subgraph Index["QMD index pipeline"]
         glob[fast-glob<br/>followSymbolicLinks: false<br/>store.ts:1189]
         read[readFileSync utf-8<br/>store.ts:1213]
         hash[SHA-256 of content<br/>hashContent]
@@ -278,7 +278,7 @@ flowchart TB
 
 ```mermaid
 C4Component
-    title Search request — components inside the qmd process
+    title Search request — components inside the QMD process
 
     Container(cli, "CLI", "src/cli/qmd.ts")
     Container(mcp, "MCP server", "src/mcp/server.ts")
@@ -346,8 +346,8 @@ Notable absences:
 | **Per-collection `update:`**             | Stable, by-design        | A user-defined shell command (`bash -c`) run before reindexing (`src/cli/qmd.ts:556-588`).                                      |
 | **Editor URI template**                  | Stable                   | `QMD_EDITOR_URI` env or `editor_uri` in YAML, with `{path}/{line}/{col}` (`src/cli/qmd.ts:1868-1912`).                          |
 | **MCP tools / resources**                | Owned API                | `query`, `get`, `multi_get`, `status` exposed via SDK (`src/mcp/server.ts:172-533`).                                            |
-| **No connector framework**               | —                        | qmd has no notion of "source type" beyond a filesystem glob. There is no plug-in API for non-filesystem sources, no async ingest, no batch source iterator. |
-| **No metadata sidecar API**              | —                        | The schema is closed. Adding bucket tags, ACLs, MIME, or external IDs requires either patching qmd or maintaining a parallel table in the same SQLite file. |
+| **No connector framework**               | —                        | QMD has no notion of "source type" beyond a filesystem glob. There is no plug-in API for non-filesystem sources, no async ingest, no batch source iterator. |
+| **No metadata sidecar API**              | —                        | The schema is closed. Adding bucket tags, ACLs, MIME, or external IDs requires either patching QMD or maintaining a parallel table in the same SQLite file. |
 
 ## A9. Runtime model
 

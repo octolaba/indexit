@@ -8,7 +8,7 @@
 - Pinned commit: `65cd1b3fd02891d1ee0eefa751620918664fa321`
 - Scope: static review only.
 
-All qmd-specific citations refer to `research/qmd/` at commit `65cd1b3fd02891d1ee0eefa751620918664fa321`.
+All QMD-specific citations refer to `research/qmd/` at commit `65cd1b3fd02891d1ee0eefa751620918664fa321`.
 
 ## Problem
 

@@ -1,4 +1,4 @@
-# qmd v2.1.0 — Security Review
+# QMD v2.1.0 — Security Review
 
 | Field         | Value                                                                                                       |
 | ------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -14,7 +14,7 @@ finding are recorded as **reviewed, no issues found**.
 
 ## B1. Threat model
 
-qmd is intended to run **as the invoking user, on a single user's
+QMD is intended to run **as the invoking user, on a single user's
 machine, against the same user's markdown files**. Practical threats are
 ranked under that assumption:
 
@@ -25,7 +25,7 @@ ranked under that assumption:
 2. **Malicious files inside an indexed tree** — a markdown file or
    filesystem symlink crafted to exfiltrate content via the index, or
    to crash the indexer.
-3. **Local network adversary on the same machine** — a non-qmd
+3. **Local network adversary on the same machine** — a non-QMD
    process on the same loopback interface hitting the MCP HTTP server
    (F-3) or reading log files (F-4).
 4. **Compromised third-party model registry** — a tampered GGUF on
@@ -33,7 +33,7 @@ ranked under that assumption:
 5. **Compromised dependency** — a transitive npm dependency used at
    runtime (F-5).
 
-Out of scope by qmd's own design: hosted multi-tenant deployments,
+Out of scope by QMD's own design: hosted multi-tenant deployments,
 network-exposed serving, multi-user shared state. None of those is a
 shipped capability. This means several CLAUDE.md §4.2 questions are
 answered with "by design, not applicable" — see §B11 below.
@@ -58,7 +58,7 @@ if (yamlCol?.update) {
 
 The `Collection.update` field (`src/collections.ts:33`) and the
 `store_collections.update_command` column (`src/store.ts:811`) hold a
-shell command string. When `qmd update` runs, qmd executes it via
+shell command string. When `qmd update` runs, QMD executes it via
 `bash -c` with the collection's path as `cwd`. The intended use is
 `update: 'git pull'`-style refresh of a notes vault before reindexing
 (`research/qmd/README.md:751`,
@@ -66,7 +66,7 @@ shell command string. When `qmd update` runs, qmd executes it via
 
 **Impact.** Whoever can write the YAML config (or the SQLite store_collections
 table — both are inside `~/.cache/qmd/index.sqlite`) gets code execution
-as the qmd-running user the next time `qmd update` is invoked. There is
+as the QMD-running user the next time `qmd update` is invoked. There is
 no allow-list, no escape-checking, no sandboxing. On a user's own
 machine this is the user's own data, but:
 
@@ -80,7 +80,7 @@ machine this is the user's own data, but:
   on user systems is an exception we'd have to call out in our threat
   model and security docs.
 
-**Recommendation for indexit.** If we adopt qmd, **disable the
+**Recommendation for indexit.** If we adopt QMD, **disable the
 `update_command` path in our wrapper**. The cleanest patch is in our
 CLI shim: refuse to call `bash -c` when `yamlCol.update` is set, or
 ignore the field. The store schema can remain.
@@ -105,7 +105,7 @@ for (const relativeFile of files) {
 
 `fast-glob` with `followSymbolicLinks: false` does **not** descend into
 symlinked directories — but a symlinked *file* whose name matches the
-glob (e.g. `notes/secret.md` → `~/.ssh/id_rsa.txt`) is returned. qmd
+glob (e.g. `notes/secret.md` → `~/.ssh/id_rsa.txt`) is returned. QMD
 then resolves it through `realpathSync` (so the indexed path is the
 target, not the link) and `readFileSync`'s the body into `content.doc`,
 where it becomes searchable and retrievable via the SDK / MCP.
@@ -119,7 +119,7 @@ notes tree, or where a notes tree is rsynced from an untrusted source,
 a symlink can pull arbitrary readable files into the index and into
 agentic/MCP responses.
 
-**Recommendation.** If we ship qmd-derived code, add a containment
+**Recommendation.** If we ship QMD-derived code, add a containment
 check: after `realpathSync`, assert the result starts with
 `realpathSync(collectionPath)`. ~5 lines.
 
@@ -203,7 +203,7 @@ transitive dependencies.
 **Impact.** Vulnerable transitive dependencies could ship to the
 release without anyone noticing.
 
-**Mitigations qmd already has.**
+**Mitigations QMD already has.**
 - All direct deps are pinned to exact versions
   (`research/qmd/package.json:48-72`; the `chore: pin all dependencies
   to exact versions` commit on 2026-04-05 was deliberate).
@@ -211,8 +211,8 @@ release without anyone noticing.
 - `pre-push` hook validates that the tag matches `package.json` and
   that GitHub CI passed (`scripts/pre-push:30-88`).
 
-**Recommendation.** For *our* CI consuming qmd: add `npm audit` /
-`osv-scanner` steps over qmd's lockfile. Don't depend on upstream to
+**Recommendation.** For *our* CI consuming QMD: add `npm audit` /
+`osv-scanner` steps over QMD's lockfile. Don't depend on upstream to
 do this.
 
 ### F-6 — Model integrity is delegated; default model is on a personal HF account (Info)
@@ -237,14 +237,14 @@ private async resolveModel(modelUri: string): Promise<string> {
 }
 ```
 
-qmd's own ETag check is for cache freshness only — it overwrites the
+QMD's own ETag check is for cache freshness only — it overwrites the
 local cache when ETag changes, and otherwise reuses what's there. The
 actual blob fetch is delegated to `node-llama-cpp`'s
-`resolveModelFile`. There is no SHA / signature check in qmd code.
+`resolveModelFile`. There is no SHA / signature check in QMD code.
 
 The default *query-expansion* model is hosted under
 `hf:tobil/qmd-query-expansion-1.7B-gguf/...`, i.e. the maintainer's
-personal HuggingFace account (model card not pinned by hash from qmd's
+personal HuggingFace account (model card not pinned by hash from QMD's
 side). The default *embedding* and *rerank* models are under
 `ggml-org/...`, which is the well-known node-llama-cpp /
 ggml-quantised mirror.
@@ -313,8 +313,8 @@ commit = execSync(`git -C ${scriptDir} rev-parse --short HEAD`, ...);
 ```
 
 `scriptDir` is `dirname(fileURLToPath(import.meta.url))` — the
-install path of qmd's own JS bundle. Not runtime-user input. Only an
-issue if qmd is installed in a path containing shell metacharacters
+install path of QMD's own JS bundle. Not runtime-user input. Only an
+issue if QMD is installed in a path containing shell metacharacters
 (e.g. `/Users/foo/qmd build/`). The result is wrapped in
 `try { … } catch { }`, so a failure is silently swallowed; the worst
 outcome is the version banner missing the short SHA.
@@ -351,7 +351,7 @@ All FTS5 queries are constructed by `buildFTS5Query`
 (`src/store.ts:2822-2902`). Every term is fed through
 `sanitizeFTS5Term` which strips everything except
 `\p{L}\p{N}'_` (`src/store.ts:2777-2779`). Operators (`AND`, `NOT`,
-prefix `*`, phrase quotes) are emitted by qmd's parser, not the
+prefix `*`, phrase quotes) are emitted by QMD's parser, not the
 user, so the user cannot inject `OR`, `MATCH`, column-name selectors,
 or unmatched quotes. Searches go through `searchFTS`
 (`src/store.ts:2927`), `hybridQuery` (`src/store.ts:3906`), and
@@ -374,7 +374,7 @@ functions take a path string and SELECT against the `documents` table.
 A malicious caller cannot pass `../../etc/passwd` to read the file
 system; they can only retrieve documents that are already indexed.
 `multi_get` likewise globs against the database, not the filesystem
-(`src/store.ts:3545-3617`). For our purposes this means qmd-as-MCP
+(`src/store.ts:3545-3617`). For our purposes this means QMD-as-MCP
 **cannot be tricked into reading off-corpus files at query time** —
 the corruption window is at indexing time only, and it's F-2.
 
@@ -382,10 +382,10 @@ the corruption window is at indexing time only, and it's F-2.
 
 | Boundary                          | Validation                                                                                                  | Notes                                                                                                                  |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| YAML config → qmd                 | `YAML.parse` (`src/collections.ts:163`) wrapped in try/catch. No schema validation of fields beyond shape.  | `update_command` accepted as-is (F-1). `editor_uri` template substitution is `replace(/\{path\}/g, ...)` etc. — never `eval`'d. |
-| Env vars → qmd                    | `QMD_EMBED_MODEL` etc. accepted as literal strings, passed to node-llama-cpp's `resolveModelFile`.          | Mismatched dimensions are guarded with a clear error (`src/store.ts:1061-1066`).                                       |
-| MCP request → qmd                 | `zod` schemas on tool input (`src/mcp/server.ts:227-316, 371-376, 437-442, 510`). String length, types enforced. | `query` content goes to FTS sanitiser / vector embed (both safe). `path` argument flows into `findDocument` (DB-only). |
-| HTTP `/query` body → qmd          | `JSON.parse(rawBody)` then `String(s.query || "")` coercion (`src/mcp/server.ts:653-667`). Field-shape check only. | No size cap on body. Worth a `Content-Length` limit if exposed beyond loopback.                                        |
+| YAML config → QMD                 | `YAML.parse` (`src/collections.ts:163`) wrapped in try/catch. No schema validation of fields beyond shape.  | `update_command` accepted as-is (F-1). `editor_uri` template substitution is `replace(/\{path\}/g, ...)` etc. — never `eval`'d. |
+| Env vars → QMD                    | `QMD_EMBED_MODEL` etc. accepted as literal strings, passed to node-llama-cpp's `resolveModelFile`.          | Mismatched dimensions are guarded with a clear error (`src/store.ts:1061-1066`).                                       |
+| MCP request → QMD                 | `zod` schemas on tool input (`src/mcp/server.ts:227-316, 371-376, 437-442, 510`). String length, types enforced. | `query` content goes to FTS sanitiser / vector embed (both safe). `path` argument flows into `findDocument` (DB-only). |
+| HTTP `/query` body → QMD          | `JSON.parse(rawBody)` then `String(s.query || "")` coercion (`src/mcp/server.ts:653-667`). Field-shape check only. | No size cap on body. Worth a `Content-Length` limit if exposed beyond loopback.                                        |
 | File contents → indexer           | None beyond the FTS5 sanitiser at query time. Bodies are stored verbatim.                                   | Markdown is treated as opaque text; no HTML rendering, no JS evaluation.                                                |
 | Editor URI template → terminal    | `encodeURI` on path; integer line/col (`src/cli/qmd.ts:1870-1912`). Wrapped in OSC 8 (`termLink`).           | `encodeURI` percent-encodes C0 control bytes including `\x07` and `\x1b`, so a malicious *path* cannot break the OSC 8 sequence. The template itself comes from env/YAML (user-controlled). |
 
@@ -413,36 +413,36 @@ fragile — see `applicability.md` §C6.
 
 ## B8. Multi-tenant / multi-user data isolation — by design, not applicable
 
-qmd is single-process, single-user. There is no concept of "tenant",
+QMD is single-process, single-user. There is no concept of "tenant",
 no auth subsystem, no per-user view. The DB file is whoever runs the
 process. This is a **non-finding**: the design is "personal tool";
 multi-tenant isolation is *out of scope* upstream. For us, it would
-become a finding the moment we exposed qmd via a network surface — at
+become a finding the moment we exposed QMD via a network surface — at
 which point F-3 becomes a real exposure rather than a local one.
 
 ## B9. Encryption — by design, not applicable
 
-qmd does not encrypt data at rest (F-8 instead notes the umask
+QMD does not encrypt data at rest (F-8 instead notes the umask
 weakness). At-transit is moot for the local-only data path; for the
 HF model fetch, node-llama-cpp uses HTTPS by default
-(URL is `https://huggingface.co/...` in `src/llm.ts:240`). qmd does
+(URL is `https://huggingface.co/...` in `src/llm.ts:240`). QMD does
 not implement TLS itself. **Reviewed, deliberate omission.**
 
 ## B10. Sandboxing of user `update:` commands — none, by design
 
 There is no resource limit, syscall filter, or chroot around the
-`bash -c <update_command>` execution; the child inherits the qmd
+`bash -c <update_command>` execution; the child inherits the QMD
 process environment and runs in the collection root
 (`src/cli/qmd.ts:559-562`). Hard to fix without breaking the feature.
 For our wrapper: just don't expose this surface (F-1 mitigation).
 
 ## B11. CLAUDE.md §4.2 — explicit answers
 
-1. **Authentication / authorization model?** — None. qmd authenticates
+1. **Authentication / authorization model?** — None. QMD authenticates
    to nothing because there is no remote endpoint. The MCP HTTP
    transport relies on loopback binding alone (F-3).
 2. **Trust boundaries and input validation at each?** — See §B6.
-3. **Secrets and credentials provisioning, storage, rotation?** — qmd
+3. **Secrets and credentials provisioning, storage, rotation?** — QMD
    itself handles no secrets. CI uses `NPM_TOKEN` and `GITHUB_TOKEN`
    from GitHub Actions secrets for publish; none of those land in the
    shipped artefact (`publish.yml:40-57`). User configs may contain
@@ -483,14 +483,14 @@ The following were specifically searched and **no concern surfaced**:
 - SQL injection (§B3).
 - FTS5 query injection (§B4).
 - Path traversal at retrieval / search time (§B5; only F-2 at indexing).
-- Deserialisation gadgets — qmd uses `JSON.parse` on its own LLM cache
+- Deserialisation gadgets — QMD uses `JSON.parse` on its own LLM cache
   values and on HTTP request bodies; no `pickle`, no `eval`, no
   `Function()`, no YAML custom-tag handlers (the `yaml` package is
   used in default safe mode in `src/collections.ts:163`).
-- Prototype pollution sinks — qmd does not merge user JSON into
+- Prototype pollution sinks — QMD does not merge user JSON into
   prototypes anywhere I could find via grep on `Object.assign`,
   `__proto__`, `constructor`.
-- XSS — qmd is a CLI / SDK / MCP server; it never renders HTML. The
+- XSS — QMD is a CLI / SDK / MCP server; it never renders HTML. The
   one place it emits ANSI-style escapes is `termLink` (OSC 8), where
   `encodeURI` neutralises control bytes in paths
   (`src/cli/qmd.ts:1870-1916`).

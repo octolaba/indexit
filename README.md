@@ -18,9 +18,9 @@ by two models:
 - [Claude report](docs/cocoindex.%20claude-opus-4.7-high/README.md) —
   `claude-opus-4.7 high` static review covering the same research checklist.
 
-### qmd
+### QMD
 
-[qmd](https://github.com/tobi/qmd) is the second researched project. The
+[QMD](https://github.com/tobi/qmd) is the second researched project. The
 analysis is pinned to `tobi/qmd` `v2.1.0`
 (`65cd1b3fd02891d1ee0eefa751620918664fa321`) and was performed independently
 by two models at `xhigh` reasoning effort:

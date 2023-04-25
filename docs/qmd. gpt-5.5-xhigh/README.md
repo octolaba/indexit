@@ -11,7 +11,7 @@
 - Scope: static review only. No upstream code, tests, scripts, examples, package managers, CLIs, build steps, or services were executed.
 - Report date: 2026-05-06
 
-All qmd-specific evidence below refers to `research/qmd/` at commit `65cd1b3fd02891d1ee0eefa751620918664fa321`.
+All QMD-specific evidence below refers to `research/qmd/` at commit `65cd1b3fd02891d1ee0eefa751620918664fa321`.
 
 ## Verdict matrix
 

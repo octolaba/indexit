@@ -1,4 +1,4 @@
-# qmd — Analysis (claude-opus-4.7, xhigh)
+# QMD — Analysis (claude-opus-4.7, xhigh)
 
 | Field          | Value                                                                                                       |
 | -------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -15,7 +15,7 @@
 
 ## TL;DR
 
-qmd v2.1.0 is a **single-binary, on-device markdown search engine**. The whole
+QMD v2.1.0 is a **single-binary, on-device markdown search engine**. The whole
 stack — BM25 (SQLite FTS5), vector search (sqlite-vec), query expansion, and
 LLM cross-encoder reranking — runs locally via `node-llama-cpp` against three
 GGUF models cached under `~/.cache/qmd/models/`. There is no server-side
@@ -33,7 +33,7 @@ layer.
 
 For our project it's **a perfect fit for the `K` (crystallised
 Knowledge / markdown notebooks) bucket of Sparkle, and a poor fit for the
-heterogeneous-source / multimodal goals**. Adopting qmd is closer to vendoring
+heterogeneous-source / multimodal goals**. Adopting QMD is closer to vendoring
 a high-quality Markdown-RAG component than to adopting a platform.
 
 **Recommendation: monitor**, with a narrow **adopt-with-changes** path if we
@@ -86,7 +86,7 @@ Pulled from [`applicability.md` §C7](applicability.md#c7-concrete-adaptation-ef
 If we adopt for a **Markdown-RAG sub-product** only:
 
 1. Write a thin Sparkle-aware wrapper around `createStore` that records bucket
-   tags out-of-band (qmd has no metadata column for this — needs sidecar
+   tags out-of-band (QMD has no metadata column for this — needs sidecar
    table, ~3–5 days).
 2. Disable / hide the per-collection `update: bash …` field in our wrapper
    (F-1, ~1 day).
@@ -94,7 +94,7 @@ If we adopt for a **Markdown-RAG sub-product** only:
    pinned mirror under our org or skip query expansion entirely (F-6, ~1 day).
 4. Switch MCP HTTP off by default, or add a token / Unix-socket variant if
    we use it (F-3, ~1–2 days).
-5. Add `npm audit` + `osv-scanner` to indexit CI for the qmd dependency
+5. Add `npm audit` + `osv-scanner` to indexit CI for the QMD dependency
    subtree (F-5, ~1 day).
 
 **Floor estimate to a Markdown-only RAG MVP:** ~1–2 dev-weeks.
@@ -106,7 +106,7 @@ rewriting around it. **Don't do this** — see
 
 ## Method notes
 
-- All claims about qmd cite a path inside `research/qmd/` at the pinned
+- All claims about QMD cite a path inside `research/qmd/` at the pinned
   commit. Where a category was reviewed and produced no finding, that is
   recorded explicitly in [`security.md`](security.md).
 - The security review goes beyond CVE/OSV/Dependabot per CLAUDE.md §3.2:
@@ -114,7 +114,7 @@ rewriting around it. **Don't do this** — see
   (localhost MCP HTTP without auth), F-4 (query-string logging), F-6 (model
   trust path), and F-8 (state-at-rest umask) are not in any public
   vulnerability database — they are behaviours of the codebase as it stands.
-- This analyst did not run any qmd code, examples, or tests. The upstream
+- This analyst did not run any QMD code, examples, or tests. The upstream
   `CLAUDE.md` and `README.md` were treated as documentation to inspect and
   cite, not as instructions to execute. The upstream `CLAUDE.md` contains
   the kind of "do not run" / "/release" / "do not compile" directives our

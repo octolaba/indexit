@@ -8,7 +8,7 @@
 - Pinned commit: `65cd1b3fd02891d1ee0eefa751620918664fa321`
 - Scope: static review only. No upstream code, tests, package managers, scripts, CLIs, examples, or services were executed.
 
-All qmd-specific citations refer to `research/qmd/` at commit `65cd1b3fd02891d1ee0eefa751620918664fa321`.
+All QMD-specific citations refer to `research/qmd/` at commit `65cd1b3fd02891d1ee0eefa751620918664fa321`.
 
 ## Security Posture Summary
 
@@ -47,7 +47,7 @@ Severity: **High when config is imported, synced, or edited by untrusted parties
 
 The collection model includes an optional `update?: string` field described as an optional bash command (`research/qmd/src/collections.ts:27`, `research/qmd/src/collections.ts:32` @ `65cd1b3...`). During `qmd update`, the CLI reads that field and runs `bash -c <update>` with the collection directory as `cwd`, then prints stdout/stderr and exits on nonzero status (`research/qmd/src/cli/qmd.ts:554`, `research/qmd/src/cli/qmd.ts:559`, `research/qmd/src/cli/qmd.ts:573`, `research/qmd/src/cli/qmd.ts:580` @ `65cd1b3...`). The README/CLI tips even suggest an update command containing git operations (`research/qmd/src/cli/qmd.ts:509`, `research/qmd/src/cli/qmd.ts:518` @ `65cd1b3...`).
 
-Impact: this is intentional automation for a local trusted user, but it becomes command execution if a shared qmd config, repo-local config, or product-generated collection definition is attacker-controlled. The command output can also leak secrets to terminal logs.
+Impact: this is intentional automation for a local trusted user, but it becomes command execution if a shared QMD config, repo-local config, or product-generated collection definition is attacker-controlled. The command output can also leak secrets to terminal logs.
 
 Recommended downstream action: do not carry this surface into product code. Replace shell strings with audited connector-specific sync jobs, or require explicit per-run confirmation and allowlists.
 
@@ -95,7 +95,7 @@ Recommended downstream action: after realpath resolution, verify `realFile.start
 
 Severity: **Low-medium**.
 
-The HTTP server creates request labels from tool names and arguments, including query/path/pattern text, and logs them on each request (`research/qmd/src/mcp/server.ts:608`, `research/qmd/src/mcp/server.ts:615`, `research/qmd/src/mcp/server.ts:619`, `research/qmd/src/mcp/server.ts:620`, `research/qmd/src/mcp/server.ts:746` @ `65cd1b3...`). The update command runner prints stdout and stderr from configured shell commands (`research/qmd/src/cli/qmd.ts:573`, `research/qmd/src/cli/qmd.ts:576` @ `65cd1b3...`). Daemon mode truncates and writes logs to `mcp.log` under the qmd cache directory (`research/qmd/src/cli/qmd.ts:3207`, `research/qmd/src/cli/qmd.ts:3212` @ `65cd1b3...`).
+The HTTP server creates request labels from tool names and arguments, including query/path/pattern text, and logs them on each request (`research/qmd/src/mcp/server.ts:608`, `research/qmd/src/mcp/server.ts:615`, `research/qmd/src/mcp/server.ts:619`, `research/qmd/src/mcp/server.ts:620`, `research/qmd/src/mcp/server.ts:746` @ `65cd1b3...`). The update command runner prints stdout and stderr from configured shell commands (`research/qmd/src/cli/qmd.ts:573`, `research/qmd/src/cli/qmd.ts:576` @ `65cd1b3...`). Daemon mode truncates and writes logs to `mcp.log` under the QMD cache directory (`research/qmd/src/cli/qmd.ts:3207`, `research/qmd/src/cli/qmd.ts:3212` @ `65cd1b3...`).
 
 Impact: private search terms, file paths, and command output can land in terminal logs or daemon logs. This matters if the indexed corpus includes sensitive local notes or work documents.
 

@@ -1,4 +1,4 @@
-# qmd v2.1.0 — Applicability for indexit
+# QMD v2.1.0 — Applicability for indexit
 
 | Field         | Value                                                                                                       |
 | ------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -14,7 +14,7 @@ pinned commit.
 
 ## C1. Sparkle (S/P/A/R/K/L/E) mapping
 
-qmd has **no taxonomy primitives at all**. The only categorical
+QMD has **no taxonomy primitives at all**. The only categorical
 attributes a document carries are:
 
 - `documents.collection` — a flat string naming a directory tree
@@ -26,22 +26,22 @@ attributes a document carries are:
 
 There is no document type, no tag, no folder semantics, no temporal
 state, no ownership column. So `S/P/A/R/K/L/E` cannot be expressed
-inside qmd's schema; we'd have to either (a) encode it in collection
+inside QMD's schema; we'd have to either (a) encode it in collection
 names / path prefixes, or (b) carry our own sidecar table.
 
 Concrete bucket-by-bucket assessment:
 
 | Sparkle bucket | Fit       | Rationale (with citations)                                                                                                                                       |
 | -------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **S — Stream** | **Poor**  | qmd has no notion of "inbox / unread / triaged". Stream is high-velocity, cross-source, often non-markdown — exactly what qmd doesn't ingest.                  |
+| **S — Stream** | **Poor**  | QMD has no notion of "inbox / unread / triaged". Stream is high-velocity, cross-source, often non-markdown — exactly what QMD doesn't ingest.                  |
 | **P — Projects** | **Marginal** | A project ≈ a markdown folder works mechanically (one collection per project), but the *time-bounded* and *outcome* aspects are not modelled — there is no completion / archive state. |
 | **A — Areas** | **Marginal** | Same as P — a folder per area works for markdown notes only.                                                                                                  |
-| **R — Resources** | **Marginal** | Reference material is rarely all markdown; PDFs, web clippings, images don't fit qmd. For pure markdown wikis, fine.                                       |
-| **K — Knowledge** | **Strong** | This is qmd's actual sweet spot — *crystallised, hand-curated markdown notebooks* (Zettelkasten, Obsidian-style vaults) are exactly the corpus the project optimises for. The smart chunker, rerank, and `context add` features fit. |
+| **R — Resources** | **Marginal** | Reference material is rarely all markdown; PDFs, web clippings, images don't fit QMD. For pure markdown wikis, fine.                                       |
+| **K — Knowledge** | **Strong** | This is QMD's actual sweet spot — *crystallised, hand-curated markdown notebooks* (Zettelkasten, Obsidian-style vaults) are exactly the corpus the project optimises for. The smart chunker, rerank, and `context add` features fit. |
 | **L — Legacy / Archived** | **Marginal** | A separate "archive" collection works mechanically; there is no first-class archival status (only `documents.active = 0` for missing-from-disk).        |
-| **E — Essentials** | **Poor**  | Identity / worldview material is usually structured but small — qmd doesn't help, and using collections for "self" reduces it to one more folder.            |
+| **E — Essentials** | **Poor**  | Identity / worldview material is usually structured but small — QMD doesn't help, and using collections for "self" reduces it to one more folder.            |
 
-So qmd is essentially a **K-bucket-shaped tool**. Trying to drive
+So QMD is essentially a **K-bucket-shaped tool**. Trying to drive
 S/P/A/R/L/E through it is forcing collections-as-namespaces, which
 loses precisely the metadata that would make Sparkle valuable.
 
@@ -57,7 +57,7 @@ What survives ingestion:
 | Title                                   | Yes        | Extracted from first heading or filename (`src/store.ts:2045`).                             |
 | `mtime` / `birthtime`                   | Captured   | `documents.created_at` / `modified_at` from `statSync` (`src/store.ts:1240-1251`); not exposed in search results (`modifiedAt: ""` in `src/store.ts:2988`). |
 | Path-level free-text context            | Yes        | `path_contexts` → `store_collections.context` (`src/store.ts:914-933`).                     |
-| File mode / owner / group               | **No**     | qmd's schema has no column for them.                                                        |
+| File mode / owner / group               | **No**     | QMD's schema has no column for them.                                                        |
 | MIME / file type                        | **No**     | Implicit "markdown".                                                                        |
 | External system ID (e.g. Notion page id, Linear ticket id) | **No** | No column. Encoding it in path is the only escape hatch.                                    |
 | Permissions / ACLs                      | **No**     | Same.                                                                                        |
@@ -65,7 +65,7 @@ What survives ingestion:
 | Sync semantics                          | **Partial** | `reindexCollection` re-globs and (a) hashes new content, (b) updates titles / hashes when files change, (c) deactivates rows for missing paths, (d) cleans orphaned content. There is no cross-source reconciliation, no last-write-wins, no versioning. (`src/store.ts:1228-1268`.) |
 | Conflict state                          | **No**     | No notion of conflicts because there is no source-of-truth competition; the filesystem is authoritative.                                              |
 
-For indexit, this means **qmd's data model loses most of what we'd want
+For indexit, this means **QMD's data model loses most of what we'd want
 about a heterogeneous source**. Even if we forced everything into a
 single SQLite file by pretending each remote source is a "collection",
 we'd have to maintain a parallel table for IDs, ACLs, deduplication
@@ -74,9 +74,9 @@ substrate ourselves.
 
 ## C3. Multimodal handling
 
-This is where qmd is most clearly out of scope for goal #2.
+This is where QMD is most clearly out of scope for goal #2.
 
-| Modality | qmd v2.1.0 handling                                                                                                              |
+| Modality | QMD v2.1.0 handling                                                                                                              |
 | -------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | Text (markdown)         | First-class. Smart chunker is markdown-aware, the FTS5 tokeniser is `porter unicode61`, embedding prompts are nomic-style for embeddinggemma or instruct-style for Qwen3-Embedding (`src/llm.ts:38-58`). |
 | Source code (TS/JS/PY/GO/RS) | Chunked at AST boundaries when `--chunk-strategy auto` is used (`src/ast.ts:87-165`); embedded as text. Not separately retrievable, not indexed differently from prose. |
@@ -123,12 +123,12 @@ exactly what breaks for multimodal.
 
 ## C5. Source connectors relevant to us
 
-**None.** qmd has exactly one connector: filesystem `**/*.md` glob.
+**None.** QMD has exactly one connector: filesystem `**/*.md` glob.
 There are no Notion, Slack, GitHub, IMAP, Google Drive, Dropbox,
 Confluence, Jira, browser-history, or any other source readers. The
 extension hook for "different source" is "put markdown files on disk
 and point a collection at them". Implementing connectors against
-qmd's SDK boils down to writing markdown-conversion ETL into the
+QMD's SDK boils down to writing markdown-conversion ETL into the
 filesystem.
 
 ## C6. License, governance, bus factor
@@ -156,38 +156,38 @@ versions, vendor models, plan for a fork.
 
 Two adoption shapes to size:
 
-### C7a. Adopt qmd as a Markdown-RAG sub-product (narrow scope)
+### C7a. Adopt QMD as a Markdown-RAG sub-product (narrow scope)
 
 Goal: ship a Sparkle-K-bucket markdown search experience inside indexit
 without doing anything heterogeneous or multimodal.
 
 | Item | Estimate |
 | ---- | -------- |
-| Vendor qmd at v2.1.0; consume as `@tobilu/qmd` or fork. | <1 day |
+| Vendor QMD at v2.1.0; consume as `@tobilu/qmd` or fork. | <1 day |
 | Disable / hide `update_command` shell hook in our wrapper (F-1). | ~1 day |
 | Mirror default models under our HF org / verify by SHA on download (F-6). | ~1–2 days |
-| Add `npm audit` / `osv-scanner` in our CI for qmd's deps (F-5). | ~1 day |
+| Add `npm audit` / `osv-scanner` in our CI for QMD's deps (F-5). | ~1 day |
 | Wire stdio-MCP only in our wrapper; if HTTP needed, add token + Origin allow-list (F-3). | ~1–2 days |
 | `chmod 0600` on the SQLite file + cache dir 0700 (F-8). | <1 day |
-| Sidecar Sparkle-K metadata table to record bucket / project / area / etc. (qmd has no such column). | ~3–5 days |
+| Sidecar Sparkle-K metadata table to record bucket / project / area / etc. (QMD has no such column). | ~3–5 days |
 | Sanity tests + observability hooks. | ~2–3 days |
 
 **Floor: ~1.5 dev-weeks. Ceiling: ~2.5 dev-weeks.**
 
-### C7b. Adopt qmd as the engine for indexit's actual goals
+### C7b. Adopt QMD as the engine for indexit's actual goals
 
 Goal: heterogeneous sources + multimodal semantic search.
 
 | Item | Estimate |
 | ---- | -------- |
-| Connector framework (Notion / Slack / GitHub / Drive / IMAP / browser history) — qmd has none, so we'd write a parallel ETL that produces `.md` for qmd to consume. Each connector ~1 week. | ~6–10 weeks |
+| Connector framework (Notion / Slack / GitHub / Drive / IMAP / browser history) — QMD has none, so we'd write a parallel ETL that produces `.md` for QMD to consume. Each connector ~1 week. | ~6–10 weeks |
 | Per-source identity layer: external IDs, ACLs, MIME, modality flag — sidecar table in the same SQLite file, plus all the indexer/search wrapping. | ~2–3 weeks |
-| Image / audio / video pipelines: model selection, embedder, retrieval — not supported in qmd at all; we'd be running a separate engine and joining at query time. | ~4–8 weeks |
-| Reconcile multi-engine results (one for markdown via qmd, one for media) into a single ranked answer. | ~1–2 weeks |
-| Maintenance overhead of bridging qmd's evolving v2.x schema with our sidecar tables. | ongoing |
+| Image / audio / video pipelines: model selection, embedder, retrieval — not supported in QMD at all; we'd be running a separate engine and joining at query time. | ~4–8 weeks |
+| Reconcile multi-engine results (one for markdown via QMD, one for media) into a single ranked answer. | ~1–2 weeks |
+| Maintenance overhead of bridging QMD's evolving v2.x schema with our sidecar tables. | ongoing |
 
 **Floor: ~3 dev-months. Ceiling: ~6 dev-months.** At that point we are
-mostly using qmd's BM25+vec+rerank text plumbing — which is replaceable
+mostly using QMD's BM25+vec+rerank text plumbing — which is replaceable
 by other off-the-shelf libraries with comparable cost.
 
 ## C8. Exit cost
@@ -202,8 +202,8 @@ by other off-the-shelf libraries with comparable cost.
 - The whole engine is ~6 source files of substance; replicating its
   features (FTS5 + sqlite-vec + rerank + RRF) on top of LangChain /
   LlamaIndex / Chroma / similar is a few-week effort if we ever
-  decide qmd's bus-factor risk is too high.
-- Models are independent of qmd — switching to another GGUF or hosted
+  decide QMD's bus-factor risk is too high.
+- Models are independent of QMD — switching to another GGUF or hosted
   embedder is config-only (§C4).
 
 ## C9. Final recommendation
@@ -213,13 +213,13 @@ decide to ship a Markdown-RAG sub-product.
 
 Reasoning:
 
-- qmd is **excellent at what it does** — markdown hybrid search with
+- QMD is **excellent at what it does** — markdown hybrid search with
   on-device LLM rerank, smart chunking, and an MCP frontend. The
   engineering quality is high (clean SQL hygiene, parameterised
   queries, sanitised FTS5, careful chunker, well-thought-through
   RRF + reranker blend).
 - It is **off-target for indexit's core goals**. Sparkle's seven
-  buckets cannot be expressed in qmd's schema without a sidecar; qmd
+  buckets cannot be expressed in QMD's schema without a sidecar; QMD
   serves multimodal not at all (no OCR, ASR, caption, image/audio/video
   embedder); per-source identity and ACLs are not preserved.
 - The **bus-factor and personal-account model dependency** are
@@ -227,13 +227,13 @@ Reasoning:
   product we'd want to vendor models, pin versions, and plan for a
   fork — overhead that erodes whatever leverage we'd get from adopting.
 - The **exit cost is low**, so if we ship the markdown sub-product
-  with qmd, we are not boxed in.
+  with QMD, we are not boxed in.
 
 If we ship a markdown-knowledge-base sub-feature that maps cleanly to
 the **K** bucket and nothing else: **adopt-with-changes**, follow the
 checklist in §C7a.
 
-If we are deciding whether qmd is the engine for **indexit overall**:
+If we are deciding whether QMD is the engine for **indexit overall**:
 **reject**. Build / adopt a connector-and-modality-shaped substrate
 elsewhere.
 

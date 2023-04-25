@@ -61,7 +61,7 @@ executing agent (e.g. `claude-opus-4.7-xhigh`):
 
 ## Acceptance criteria
 
-- All claims about qmd cite a path inside `research/qmd/` and
+- All claims about QMD cite a path inside `research/qmd/` and
   reference commit `65cd1b3fd02891d1ee0eefa751620918664fa321` (or a file
   within `v2.1.0`).
 - Every question in §4.1, §4.2, §4.3 is answered explicitly; non-applicable

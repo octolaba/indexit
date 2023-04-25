@@ -8,7 +8,7 @@
 - Pinned commit: `65cd1b3fd02891d1ee0eefa751620918664fa321`
 - Scope: static review only.
 
-All qmd-specific citations refer to `research/qmd/` at commit `65cd1b3fd02891d1ee0eefa751620918664fa321`.
+All QMD-specific citations refer to `research/qmd/` at commit `65cd1b3fd02891d1ee0eefa751620918664fa321`.
 
 ## Executive Verdict
 
@@ -68,7 +68,7 @@ Goal 2 verdict: **Low fit**. QMD can consume OCR/ASR/caption outputs if they are
 
 ## Embedding And Model Strategy
 
-QMD's model stack is local GGUF via `node-llama-cpp`. Defaults are embeddinggemma for embeddings, Qwen3 reranker, and a fine-tuned qmd query-expansion model (`research/qmd/src/llm.ts:193`, `research/qmd/src/llm.ts:196`, `research/qmd/src/llm.ts:197`, `research/qmd/src/llm.ts:199` @ `65cd1b3...`). Queries/documents are formatted differently for embeddinggemma-style and Qwen3-Embedding-style models (`research/qmd/src/llm.ts:25`, `research/qmd/src/llm.ts:38`, `research/qmd/src/llm.ts:51` @ `65cd1b3...`). Model selection is pluggable through YAML config, environment variables, or `LlamaCppConfig` (`research/qmd/src/collections.ts:37`, `research/qmd/src/llm.ts:354`, `research/qmd/src/llm.ts:438` @ `65cd1b3...`).
+QMD's model stack is local GGUF via `node-llama-cpp`. Defaults are embeddinggemma for embeddings, Qwen3 reranker, and a fine-tuned QMD query-expansion model (`research/qmd/src/llm.ts:193`, `research/qmd/src/llm.ts:196`, `research/qmd/src/llm.ts:197`, `research/qmd/src/llm.ts:199` @ `65cd1b3...`). Queries/documents are formatted differently for embeddinggemma-style and Qwen3-Embedding-style models (`research/qmd/src/llm.ts:25`, `research/qmd/src/llm.ts:38`, `research/qmd/src/llm.ts:51` @ `65cd1b3...`). Model selection is pluggable through YAML config, environment variables, or `LlamaCppConfig` (`research/qmd/src/collections.ts:37`, `research/qmd/src/llm.ts:354`, `research/qmd/src/llm.ts:438` @ `65cd1b3...`).
 
 This is good for local text retrieval experimentation. It is not enough for the downstream multimodal goal because the model interface exposes text embedding/generation/reranking only (`research/qmd/src/llm.ts:316`, `research/qmd/src/llm.ts:320`, `research/qmd/src/llm.ts:325`, `research/qmd/src/llm.ts:342` @ `65cd1b3...`).
 
@@ -129,7 +129,7 @@ Exit cost is low if QMD is used only as an optional local markdown index because
 | Which metadata survives indexing? | Collection, normalized path, title, hash, timestamps, active state, context, and vector chunk positions survive (`research/qmd/src/store.ts:758`, `research/qmd/src/store.ts:792`, `research/qmd/src/store.ts:2081` @ `65cd1b3...`). |
 | Which permissions/ownership/dedup/sync/conflict state survives? | Dedup survives as content hash; sync is scan/update/inactive marking; ownership, permissions, and conflicts do not exist in schema (`research/qmd/src/store.ts:746`, `research/qmd/src/store.ts:1258`, `research/qmd/src/store.ts:758` @ `65cd1b3...`). |
 | Which modalities use native multimodal representations? | None. Text/code use text embeddings; image/audio/video have no native representation (`research/qmd/src/llm.ts:316`, `research/qmd/src/ast.ts:34`, `research/qmd/src/store.ts:1211` @ `65cd1b3...`). |
-| What embedding/model strategy is used, and is it pluggable? | Local GGUF through `node-llama-cpp`; default embeddinggemma/Qwen reranker/qmd expansion model; pluggable via config/env/SDK (`research/qmd/src/llm.ts:193`, `research/qmd/src/llm.ts:438`, `research/qmd/src/collections.ts:37` @ `65cd1b3...`). |
+| What embedding/model strategy is used, and is it pluggable? | Local GGUF through `node-llama-cpp`; default embeddinggemma/Qwen reranker/QMD expansion model; pluggable via config/env/SDK (`research/qmd/src/llm.ts:193`, `research/qmd/src/llm.ts:438`, `research/qmd/src/collections.ts:37` @ `65cd1b3...`). |
 | Which relevant source connectors already exist? | Local filesystem glob collections and shell update hooks only (`research/qmd/src/store.ts:1189`, `research/qmd/src/collections.ts:32` @ `65cd1b3...`). |
 | License compatibility? | MIT, compatible with downstream use subject to notice obligations and dependency review (`research/qmd/LICENSE:1`, `research/qmd/LICENSE:5`, `research/qmd/package.json:110` @ `65cd1b3...`). |
 | Maintainer activity/governance/bus factor? | Active release cadence and many credited community PRs; formal governance/security process not evident in pinned tree (`research/qmd/CHANGELOG.md:5`, `research/qmd/CHANGELOG.md:10` @ `65cd1b3...`). |
