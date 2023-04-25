@@ -190,6 +190,12 @@ The repository separates **upstream code** from **agent-specific analysis**.
   exactly dot plus space: `. `. This allows multiple agents or model/effort
   combinations to produce separate perspectives on the same upstream project.
 
+Report folders are versionless by design. For a given project, the contents of
+`docs/<project-slug>. <agent-slug>/` correspond to the latest closed research
+issue for that project. Older issue files remain historical records of earlier
+pinned versions; do not retitle or rewrite them when a newer version is
+analysed.
+
 ```
 research/
   <project-slug>/        # git submodule → upstream repo (read-only)
@@ -288,3 +294,45 @@ and adoption effort.
 - **Do not edit `CLAUDE.md` unless explicitly requested.** Treat it as a
   separate agent manual; changes to `AGENTS.md` do not imply permission to
   mirror the same edits into `CLAUDE.md`.
+
+## 7. Research issues
+
+Each analyzed project is tracked by a dedicated issue file under
+`.github/issues/`. The shape of that file is defined by exactly one template,
+`.github/templates/issue.md`, which is the source of truth for the headings,
+labels, deliverables, and acceptance criteria of every research issue. This
+section only documents the workflow around the template; do not duplicate the
+template's body here.
+
+To open a new research issue:
+
+1. Pin the upstream submodule under `research/<project-slug>/` to a released
+   tag, falling back to a commit hash only when upstream publishes none (see
+   §6 *Pin to a released version*). If a release tag exists, use that tag as
+   `<version>` and capture the exact tag plus the full 40-character commit SHA.
+   If upstream publishes no tags, use a 12-character short commit SHA as
+   `<version>` and capture the full 40-character commit SHA as `{{commit}}`.
+2. Copy `.github/templates/issue.md` to
+   `.github/issues/research-<project-slug>-<version>.md`. The filename's slug
+   and version must match the frontmatter `title`; the H1 must use
+   `{{project_name}}` and the same version.
+3. Replace every `{{placeholder}}` documented in the template's leading
+   comment: `{{project_slug}}`, `{{project_name}}`, `{{version}}`,
+   `{{owner}}`, `{{repo}}`, `{{commit}}`. Preserve upstream capitalization in
+   `{{project_name}}`; keep `{{project_slug}}` lowercase and kebab-case so it
+   matches the `research/` folder.
+4. Delete the template's leading HTML comment block once the placeholders are
+   filled in. The committed issue file must contain no `{{...}}` markers.
+5. Leave every deliverable checkbox as `[ ]` and `state: open` at creation
+   time. Flip a box to `[x]` only when the corresponding report under
+   `docs/<project-slug>. <agent-slug>/` has actually landed. Set
+   `state: closed` only after all deliverables are complete and the acceptance
+   criteria have been reviewed.
+
+One issue tracks one pinned version. Re-analyzing a project at a new version
+means a new issue file at the new version; do not retitle or rewrite an
+existing one. The versionless report folders in `docs/` correspond to the
+latest closed issue for that project; older issue files stay as the audit trail
+for earlier pinned versions. The template itself only changes when the shared
+workflow changes. Changes to issue workflow must be reflected here, and changes
+to report layout or deliverables must be reflected in §5, in the same commit.
