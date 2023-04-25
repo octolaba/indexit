@@ -22,7 +22,8 @@ Placeholders:
 
 Conventions:
   - Filename:  `research-{{project_slug}}-{{version}}.md`
-  - Frontmatter title and H1 must agree with the filename's slug and version.
+  - Frontmatter title uses `{{project_slug}}@{{version}}`; H1 uses
+    `{{project_name}} {{version}}`.
   - Keep `state: open` and all checklist items unchecked (`[ ]`) at creation
     time; close the issue only after all deliverables land and acceptance
     criteria have been reviewed.
@@ -90,7 +91,7 @@ executing agent (e.g. `claude-opus-4.7-xhigh`):
 
 ## Acceptance criteria
 
-- All claims about {{project_slug}} cite a path inside
+- All claims about {{project_name}} cite a path inside
   `research/{{project_slug}}/` and reference commit `{{commit}}` (or a file
   within `{{version}}`).
 - Every question in §4.1, §4.2, §4.3 is answered explicitly; non-applicable
