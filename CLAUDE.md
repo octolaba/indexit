@@ -324,6 +324,11 @@ and adoption effort.
   - Inside a paragraph, do not put a blank line before an inline
     bullet list — the list belongs to the paragraph. Only separate a
     list from the preceding **heading** with a blank line.
+  - Run `.github/scripts/format-md.py <file>...` to normalize a file
+    against the three rules above. The script is idempotent; pass
+    `--check` to preview the diff without rewriting. Use it on any
+    file you touched before committing — re-aligning a table after a
+    cell edit by hand is tedious and easy to get wrong.
 - **Never edit `AGENTS.md`.** This file is the cross-agent operating manual
   (read by Codex, Cursor, etc.) and must stay agent-neutral. `CLAUDE.md` may
   contain Claude-specific affordances (e.g. `AskUserQuestion`,
