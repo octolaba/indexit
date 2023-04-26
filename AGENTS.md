@@ -291,11 +291,40 @@ and adoption effort.
   An honest "unknown" is more valuable than a confident guess.
 - **Update, do not duplicate.** If a project has already been analysed,
   amend the existing folder rather than starting a new one.
+- **Use the report templates.** Long-form deliverables ship with
+  templates under `.github/templates/` (the canonical home for any
+  template in this repo). Start every report by copying the matching
+  template and replacing placeholders — do not invent a parallel
+  layout. When a template needs to change, change the template once
+  and migrate existing reports separately; do not let one-off reports
+  drift the shape.
+- **Formatting rules for committed Markdown.**
+  - Do not use `---` (horizontal rule) to separate sections. Headings
+    are the only allowed section delimiter — the rule lines add noise
+    to diffs and break the heading-only TOC contract.
+  - Align table columns to the widest cell in each column so the raw
+    Markdown stays readable as a grid.
+  - Inside a paragraph, do not put a blank line before an inline
+    bullet list — the list belongs to the paragraph. Only separate a
+    list from the preceding **heading** with a blank line.
 - **Do not edit `CLAUDE.md` unless explicitly requested.** Treat it as a
   separate agent manual; changes to `AGENTS.md` do not imply permission to
   mirror the same edits into `CLAUDE.md`.
 
-## 7. Research issues
+## 7. `.github/` conventions: templates and issues
+
+Two folders carry repository-wide defaults:
+
+- `.github/issues/` — the **only** place per-project task files live.
+  One file per pinned version; never retitle or rewrite an existing
+  one. When the user mentions "the task" / "the issue", look here
+  first.
+- `.github/templates/` — the **only** place templates live. Anything
+  reusable across reports or issues (report shells, issue shapes,
+  checklist scaffolds) belongs here. Templates are written to be
+  reused by every agent and are kept to one file per artefact kind
+  (e.g. `issue.md`, `applicability.md`). When the user asks for "a
+  template", default to this folder unless they say otherwise.
 
 Each analyzed project is tracked by a dedicated issue file under
 `.github/issues/`. The shape of that file is defined by exactly one template,
