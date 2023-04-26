@@ -12,14 +12,14 @@
 
 ## Verdict matrix
 
-| Area | Verdict |
-| --- | --- |
-| Overall recommendation | **Adopt-with-changes** |
-| Sparkle fit | **Medium**. CocoIndex preserves per-item target state, stable paths, memo state, and source-derived identity, but it has no native S/P/A/R/K/L/E taxonomy model. Sparkle must be encoded as explicit schema/metadata in user pipelines. |
-| Multimodal fit | **Medium**. The framework can carry bytes and vectors and examples show CLIP, ColPali, PDF-to-vision, and audio transcription patterns, but first-class modality routing is not in the core. Audio and most video workflows reduce to text. |
-| Security posture | **Mixed-positive**. Release workflow uses signed/attested artifacts and the project has a security policy, but static review found local filesystem symlink escape risk and SQL identifier escaping gaps in Postgres/SQLite connectors when names are untrusted. |
-| Extensibility | **Strong**. Public Python APIs expose functions, components, context, live feeds, target handlers, and root target-state providers. Some extension surfaces are stable; many connector internals remain private by convention. |
-| Adoption effort | **Medium-high**. A wrapper layer should provide Sparkle schema, source metadata normalization, permission/ownership capture, modality routing, and hardened connector configuration before downstream product use. |
+| Area                   | Verdict                                                                                                                                                                                                                                                          |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Overall recommendation | **Adopt-with-changes**                                                                                                                                                                                                                                           |
+| Sparkle fit            | **Medium**. CocoIndex preserves per-item target state, stable paths, memo state, and source-derived identity, but it has no native S/P/A/R/K/L/E taxonomy model. Sparkle must be encoded as explicit schema/metadata in user pipelines.                          |
+| Multimodal fit         | **Medium**. The framework can carry bytes and vectors and examples show CLIP, ColPali, PDF-to-vision, and audio transcription patterns, but first-class modality routing is not in the core. Audio and most video workflows reduce to text.                      |
+| Security posture       | **Mixed-positive**. Release workflow uses signed/attested artifacts and the project has a security policy, but static review found local filesystem symlink escape risk and SQL identifier escaping gaps in Postgres/SQLite connectors when names are untrusted. |
+| Extensibility          | **Strong**. Public Python APIs expose functions, components, context, live feeds, target handlers, and root target-state providers. Some extension surfaces are stable; many connector internals remain private by convention.                                   |
+| Adoption effort        | **Medium-high**. A wrapper layer should provide Sparkle schema, source metadata normalization, permission/ownership capture, modality routing, and hardened connector configuration before downstream product use.                                               |
 
 ## Report links
 

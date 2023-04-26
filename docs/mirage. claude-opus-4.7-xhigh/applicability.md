@@ -16,8 +16,6 @@ reduces to: "could Mirage serve as a *connector layer* underneath an
 indexer that we build?" — which is a fairer question than "does Mirage
 solve our indexing problem?" (it does not).
 
----
-
 ## 1. Sparkle (Goal 1) — fit assessment
 
 ### 1.1. Bucket-by-bucket mapping
@@ -27,15 +25,15 @@ classifies nothing — it exposes *paths*. So the Sparkle question becomes
 "can the indexer that consumes Mirage preserve the distinctions Sparkle
 needs?".
 
-| Bucket | Maps onto a Mirage concept? | Loss / gain |
-| --- | --- | --- |
-| **S** Stream | Yes — every remote `Resource` (Slack, Email, Discord, Telegram, GitHub Issues, Linear) is naturally a Stream source mounted under `/<prefix>/` | Mirage does not deduplicate cross-source streams; same item appearing in Slack DM and email is two different paths |
-| **P** Projects | Out of scope for Mirage | The indexer must add this layer; Mirage carries no project lifecycle field |
-| **A** Areas | Out of scope for Mirage | Same as above |
-| **R** Resources | Indirectly — `GDocsResource`, `GSheetsResource`, `GDriveResource`, `NotionResource`, `LinearResource` provide Resource-flavoured backends | Filesystem flattening loses Notion's block hierarchy and GDoc revision history beyond what `FileStat.extra` carries |
-| **K** Knowledge | **No mapping.** "Crystallised expertise" is a *user-internalised* state, not a source feature | Indexer-side concern; Mirage is neutral |
-| **L** Legacy | No archival semantics in Mirage | Indexer-side concern |
-| **E** Essentials | No identity-layer concept | Indexer-side concern |
+| Bucket           | Maps onto a Mirage concept?                                                                                                                    | Loss / gain                                                                                                         |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **S** Stream     | Yes — every remote `Resource` (Slack, Email, Discord, Telegram, GitHub Issues, Linear) is naturally a Stream source mounted under `/<prefix>/` | Mirage does not deduplicate cross-source streams; same item appearing in Slack DM and email is two different paths  |
+| **P** Projects   | Out of scope for Mirage                                                                                                                        | The indexer must add this layer; Mirage carries no project lifecycle field                                          |
+| **A** Areas      | Out of scope for Mirage                                                                                                                        | Same as above                                                                                                       |
+| **R** Resources  | Indirectly — `GDocsResource`, `GSheetsResource`, `GDriveResource`, `NotionResource`, `LinearResource` provide Resource-flavoured backends      | Filesystem flattening loses Notion's block hierarchy and GDoc revision history beyond what `FileStat.extra` carries |
+| **K** Knowledge  | **No mapping.** "Crystallised expertise" is a *user-internalised* state, not a source feature                                                  | Indexer-side concern; Mirage is neutral                                                                             |
+| **L** Legacy     | No archival semantics in Mirage                                                                                                                | Indexer-side concern                                                                                                |
+| **E** Essentials | No identity-layer concept                                                                                                                      | Indexer-side concern                                                                                                |
 
 **Verdict on the taxonomy.** Mirage cleanly serves S and (loosely) R as
 *source* layers. P/A/K/L/E are problems for the indexer that *consumes*
@@ -51,7 +49,6 @@ even if the underlying resource is re-instantiated
 remote backends, source identity at the *item* level is the path within
 that mount — and that path is whatever the resource invents to flatten
 the upstream onto a filesystem. Examples:
-
 * **GitHub.** `(/owner/repo, ref)` is encoded into the resource
   constructor (`research/mirage/python/mirage/resource/github/github.py:36-51`).
   The mount itself is `/github/`; the per-item identity is the relative
@@ -81,14 +78,14 @@ the `extra`/`meta` dict.
 
 In practice this means:
 
-| Source | What survives in `FileStat.extra` (or analogue) | What is lost |
-| --- | --- | --- |
-| GDocs | document ID, mime type, modified time | revision history, comments, suggestion mode, ACLs |
-| Slack | message ts, thread_ts (if encoded) | reactions, edit history, user role |
-| Notion | block ID, parent ID | block-tree relations, formulas, rollups |
-| Linear | issue ID, status | parent project, cycle, assignee history |
-| GitHub | tree-entry SHA, size | issue comments (the GitHub resource is repo-tree only at v0.0.1 — issue/PR mounts come later per `research/mirage/docs/plans/`) |
-| Email | UID | thread relations (X-Refs / In-Reply-To not normalised), spam labels |
+| Source | What survives in `FileStat.extra` (or analogue) | What is lost                                                                                                                    |
+| ------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| GDocs  | document ID, mime type, modified time           | revision history, comments, suggestion mode, ACLs                                                                               |
+| Slack  | message ts, thread_ts (if encoded)              | reactions, edit history, user role                                                                                              |
+| Notion | block ID, parent ID                             | block-tree relations, formulas, rollups                                                                                         |
+| Linear | issue ID, status                                | parent project, cycle, assignee history                                                                                         |
+| GitHub | tree-entry SHA, size                            | issue comments (the GitHub resource is repo-tree only at v0.0.1 — issue/PR mounts come later per `research/mirage/docs/plans/`) |
+| Email  | UID                                             | thread relations (X-Refs / In-Reply-To not normalised), spam labels                                                             |
 
 **Sparkle implication.** If our indexer needs *any* of the lost
 metadata, Mirage will require either custom commands per resource (its
@@ -156,8 +153,6 @@ own webhooks / pollers.
 The Sparkle taxonomy is **not contradicted** by Mirage; it simply isn't
 addressed. Compatibility is "neutral", not "supportive".
 
----
-
 ## 2. Multimodal semantic indexing (Goal 2) — fit assessment
 
 ### 2.1. Native multimodal vs. text-only fallbacks
@@ -171,14 +166,14 @@ helper, no `cohere`, no `voyageai`. The optional `audio` extra brings
 non-text modality with anything resembling extraction logic in Mirage
 itself, and it is a text-conversion fallback (audio → transcript).
 
-| Modality | Mirage built-in path | Native multimodal? |
-| --- | --- | --- |
-| Text (.txt/.md/.py/.json/.yaml/.csv/.tsv/.jsonl) | First-class. Categorised in `EXTENSION_MAP` (`research/mirage/python/mirage/resource/filetype.py:17-37`); shell helpers (`grep`, `jq`, `sed`, `wc`, `head`, `tail`, `cut`, `nl`, `tr`, `uniq`, `sort`) operate on bytes | n/a — text |
-| Structured tabular (Parquet, ORC, Feather, HDF5) | Optional via `parquet`/`hdf5` extras (pandas + pyarrow + h5py); `commands/builtin/jq_helper.py` and per-resource helpers do row-wise ops | Not embedded, just queried |
-| Image (PNG / JPEG / GIF) | Categorised in `EXTENSION_MAP`; `pillow` is in core deps; PDFs use `pypdfium2` to rasterize | **No native multimodal embedder.** Reads are byte-level |
-| PDF | Optional `pdf` extra (pypdfium2, pillow). No OCR pipeline observed | Treated as a binary blob in core ops |
-| Audio | Optional `audio` extra; `commands/local_audio/disk/ram/s3` provides per-mount audio commands; `sherpa-onnx` ships ASR models | **Text-conversion fallback** (ASR transcript) |
-| Video | Not handled; `av` is included only for audio container parsing | **No support** |
+| Modality                                         | Mirage built-in path                                                                                                                                                                                                    | Native multimodal?                                      |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Text (.txt/.md/.py/.json/.yaml/.csv/.tsv/.jsonl) | First-class. Categorised in `EXTENSION_MAP` (`research/mirage/python/mirage/resource/filetype.py:17-37`); shell helpers (`grep`, `jq`, `sed`, `wc`, `head`, `tail`, `cut`, `nl`, `tr`, `uniq`, `sort`) operate on bytes | n/a — text                                              |
+| Structured tabular (Parquet, ORC, Feather, HDF5) | Optional via `parquet`/`hdf5` extras (pandas + pyarrow + h5py); `commands/builtin/jq_helper.py` and per-resource helpers do row-wise ops                                                                                | Not embedded, just queried                              |
+| Image (PNG / JPEG / GIF)                         | Categorised in `EXTENSION_MAP`; `pillow` is in core deps; PDFs use `pypdfium2` to rasterize                                                                                                                             | **No native multimodal embedder.** Reads are byte-level |
+| PDF                                              | Optional `pdf` extra (pypdfium2, pillow). No OCR pipeline observed                                                                                                                                                      | Treated as a binary blob in core ops                    |
+| Audio                                            | Optional `audio` extra; `commands/local_audio/disk/ram/s3` provides per-mount audio commands; `sherpa-onnx` ships ASR models                                                                                            | **Text-conversion fallback** (ASR transcript)           |
+| Video                                            | Not handled; `av` is included only for audio container parsing                                                                                                                                                          | **No support**                                          |
 
 The README markets the system as a *unified abstraction* over services,
 not as a multimodal search engine. There is no claim to be one.
@@ -201,7 +196,6 @@ not as a multimodal search engine. There is no claim to be one.
 
 There is **no embedding strategy**. The closest concept the codebase
 exposes that an indexer could exploit is:
-
 * The **public `command` extension surface** — register a custom verb
   like `embed` per resource, push the bytes through your embedder,
   write the vector somewhere
@@ -226,29 +220,25 @@ For Goal 2 specifically, Mirage has roughly the same value as `boto3`:
 it gets the bytes to you reliably. The semantic and multimodal layers
 must be built above it.
 
----
-
 ## 3. Source connectors relevant to indexit
 
-| Connector | Mirage version | Indexit relevance |
-| --- | --- | --- |
-| RAM, Disk | core | Local sandbox; useful for staging |
-| S3, R2, GCS, OCI, Supabase Storage | extras | Bulk content store |
-| GDrive, GDocs, GSheets, GSlides | extras | High-value Sparkle Stream |
-| Gmail, Email (IMAP/SMTP) | extras | High-value Sparkle Stream |
-| Slack, Discord, Telegram | extras | High-value Sparkle Stream |
-| GitHub, GitHub CI | core / extras | Knowledge / Resources |
-| Linear, Trello, Notion | core / extras | Projects / Areas / Knowledge |
-| MongoDB, Postgres | extras | Internal data sources |
-| SSH | extras | Generic remote disk |
-| Redis | extras | Cache / store backend |
-| Langfuse, Paperclip | core / extras | Niche / observability |
+| Connector                          | Mirage version | Indexit relevance                 |
+| ---------------------------------- | -------------- | --------------------------------- |
+| RAM, Disk                          | core           | Local sandbox; useful for staging |
+| S3, R2, GCS, OCI, Supabase Storage | extras         | Bulk content store                |
+| GDrive, GDocs, GSheets, GSlides    | extras         | High-value Sparkle Stream         |
+| Gmail, Email (IMAP/SMTP)           | extras         | High-value Sparkle Stream         |
+| Slack, Discord, Telegram           | extras         | High-value Sparkle Stream         |
+| GitHub, GitHub CI                  | core / extras  | Knowledge / Resources             |
+| Linear, Trello, Notion             | core / extras  | Projects / Areas / Knowledge      |
+| MongoDB, Postgres                  | extras         | Internal data sources             |
+| SSH                                | extras         | Generic remote disk               |
+| Redis                              | extras         | Cache / store backend             |
+| Langfuse, Paperclip                | core / extras  | Niche / observability             |
 
 22 backends covers most of the connectors a Sparkle-style index would
 want. The **breadth** is Mirage's strongest selling point relative to
 hand-rolling a connector layer.
-
----
 
 ## 4. License
 
@@ -259,8 +249,6 @@ hand-rolling a connector layer.
   indexit product code that will live in a separate repository.
 * Notice / attribution requirements are the standard Apache-2.0
   obligations — cheap to satisfy.
-
----
 
 ## 5. Maintainer activity, governance, bus factor
 
@@ -280,21 +268,18 @@ hand-rolling a connector layer.
   repo's git log; the public repo only carries shaped releases at this
   stage.
 
----
-
 ## 6. Adaptation effort estimate
 
 Three plausible integration shapes, in order of cost:
 
-| Shape | What we'd do | Effort |
-| --- | --- | --- |
-| **Wrapper / consumer** (recommended baseline) | Use `Workspace` as a library, call `read_bytes` / `readdir` / per-resource search-pushdown commands from our indexer. Build embeddings, vector store, Sparkle classifier on top. Bring our own auth model. | **Low–Medium**: 1–2 weeks for an MVP that pulls from 3–4 mounts; per-modality extractors are the long tail |
-| **Plugin / fork** | Add an "embed" command and a vector-store cache as new Mirage extension surfaces; keep Mirage's daemon as the I/O process. | **Medium**: 3–6 weeks. We'd own a fork until the upstream design stabilises |
-| **Upstream contribution** | Land a "search-pushdown protocol" + "embedder resource" PR upstream. The plans dir already drafts a `search-pushdown-multipath` design (`research/mirage/docs/plans/2026-04-26-search-pushdown-multipath.md`). | **High**: needs maintainer alignment, alpha surface stability, and review of CLA / governance |
+| Shape                                         | What we'd do                                                                                                                                                                                                   | Effort                                                                                                     |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **Wrapper / consumer** (recommended baseline) | Use `Workspace` as a library, call `read_bytes` / `readdir` / per-resource search-pushdown commands from our indexer. Build embeddings, vector store, Sparkle classifier on top. Bring our own auth model.     | **Low–Medium**: 1–2 weeks for an MVP that pulls from 3–4 mounts; per-modality extractors are the long tail |
+| **Plugin / fork**                             | Add an "embed" command and a vector-store cache as new Mirage extension surfaces; keep Mirage's daemon as the I/O process.                                                                                     | **Medium**: 3–6 weeks. We'd own a fork until the upstream design stabilises                                |
+| **Upstream contribution**                     | Land a "search-pushdown protocol" + "embedder resource" PR upstream. The plans dir already drafts a `search-pushdown-multipath` design (`research/mirage/docs/plans/2026-04-26-search-pushdown-multipath.md`). | **High**: needs maintainer alignment, alpha surface stability, and review of CLA / governance              |
 
 **Exit cost**, should Mirage stall or pivot, is a function of how
 deeply we lean on it:
-
 * If we use Mirage only as a connector library (Shape 1): **Low**.
   Replacing the layer means rewriting per-source `read_bytes`/`stat`
   glue — irritating but bounded; ~2 weeks per backend cluster.
@@ -304,13 +289,10 @@ deeply we lean on it:
 * If we fork (Shape 2): **High**, because we own a tree of 25k LoC
   Python + sibling TS we did not write.
 
----
-
 ## 7. Operational red flags for our context
 
 These come from the security review (`security.md`), focused on what
 matters if we *adopt* Mirage:
-
 1. **No daemon auth (security §3.1).** Either rebuild the runtime
    inside our own service that wraps `Workspace` directly — bypassing
    the daemon — or land an auth dependency upstream before exposing the
@@ -329,8 +311,6 @@ matters if we *adopt* Mirage:
 
 None of these are blockers for *consumer-mode* use, but each must be
 factored into the integration plan.
-
----
 
 ## 8. Strengths to keep in mind
 
@@ -352,8 +332,6 @@ factored into the integration plan.
 * **Cross-language parity.** Python + TS implementations means embed
   paths in both Node services and Python pipelines.
 
----
-
 ## 9. Concrete adoption recipe (if we monitor → adopt)
 
 1. **Wrap, don't host.** Embed `Workspace` in our indexer service via
@@ -374,8 +352,6 @@ factored into the integration plan.
 6. **Watch upstream.** Track the issues for: daemon auth, snapshot
    hardening, search-pushdown protocol, audio/image extraction
    surface. Re-evaluate at the next minor release.
-
----
 
 ## 10. Final recommendation
 
@@ -416,19 +392,17 @@ factored into the integration plan.
 * Allowlist the resources we trust.
 * Watch the security advisory channel.
 
----
-
 ## 11. §4.3 question checklist (explicit answers)
 
-| §4.3 question | Answer (location) |
-| --- | --- |
-| Sparkle mapping | §1 above. Mirage is neutral; it serves S/R but does not classify |
-| Non-text modalities | §2 above. **Bolted-on text fallbacks (audio → ASR) at most, no native multimodal** |
-| Source identity, metadata, permissions, dedup, sync | §1.2–1.6 above |
-| Native vs. fallback per modality | §2.1 / §2.2 above |
-| Embedding strategy | §2.3 above. **None in v0.0.1** |
-| Existing connectors relevant to us | §3 above (22 backends) |
-| License | Apache-2.0 — §4 |
-| Maintainer activity / governance / bus factor | §5 |
-| Adaptation effort: fork / plugin / wrapper / contribution | §6 |
-| Final recommendation with reasoning | §10 |
+| §4.3 question                                             | Answer (location)                                                                  |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Sparkle mapping                                           | §1 above. Mirage is neutral; it serves S/R but does not classify                   |
+| Non-text modalities                                       | §2 above. **Bolted-on text fallbacks (audio → ASR) at most, no native multimodal** |
+| Source identity, metadata, permissions, dedup, sync       | §1.2–1.6 above                                                                     |
+| Native vs. fallback per modality                          | §2.1 / §2.2 above                                                                  |
+| Embedding strategy                                        | §2.3 above. **None in v0.0.1**                                                     |
+| Existing connectors relevant to us                        | §3 above (22 backends)                                                             |
+| License                                                   | Apache-2.0 — §4                                                                    |
+| Maintainer activity / governance / bus factor             | §5                                                                                 |
+| Adaptation effort: fork / plugin / wrapper / contribution | §6                                                                                 |
+| Final recommendation with reasoning                       | §10                                                                                |

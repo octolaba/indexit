@@ -1,12 +1,12 @@
 # QMD v2.1.0 — Security Review
 
-| Field         | Value                                                                                                       |
-| ------------- | ----------------------------------------------------------------------------------------------------------- |
-| Subject       | [tobi/qmd](https://github.com/tobi/qmd) @ `v2.1.0`                                                          |
-| Pinned commit | `65cd1b3fd02891d1ee0eefa751620918664fa321`                                                                  |
-| Vendored at   | `research/qmd/`                                                                                             |
-| Analyst       | claude-opus-4.7, effort=xhigh                                                                               |
-| Method        | Static, read-only review per CLAUDE.md / AGENTS.md §3–§6. No code executed.                                |
+| Field         | Value                                                                       |
+| ------------- | --------------------------------------------------------------------------- |
+| Subject       | [tobi/qmd](https://github.com/tobi/qmd) @ `v2.1.0`                          |
+| Pinned commit | `65cd1b3fd02891d1ee0eefa751620918664fa321`                                  |
+| Vendored at   | `research/qmd/`                                                             |
+| Analyst       | claude-opus-4.7, effort=xhigh                                               |
+| Method        | Static, read-only review per CLAUDE.md / AGENTS.md §3–§6. No code executed. |
 
 This document answers CLAUDE.md §3.2 and §4.2. Each finding cites file +
 line at the pinned commit. Categories that were reviewed and produced no
@@ -17,7 +17,6 @@ finding are recorded as **reviewed, no issues found**.
 QMD is intended to run **as the invoking user, on a single user's
 machine, against the same user's markdown files**. Practical threats are
 ranked under that assumption:
-
 1. **Malicious or compromised configuration** — anyone who can write
    `~/.config/qmd/index.yml`, the per-collection YAML field, or the
    SQLite `store_collections.update_command` column reaches
@@ -69,7 +68,6 @@ table — both are inside `~/.cache/qmd/index.sqlite`) gets code execution
 as the QMD-running user the next time `qmd update` is invoked. There is
 no allow-list, no escape-checking, no sandboxing. On a user's own
 machine this is the user's own data, but:
-
 - A shared markdown vault committed to git could carry a
   `qmd-suggested` config in a sibling README and trick the user into
   installing it.
@@ -137,7 +135,6 @@ await new Promise<void>((resolve, reject) => {
 The transport binds to the loopback interface with **no token, no
 basic auth, no Origin / Host validation, no CORS**. Any local process
 that can `connect(127.0.0.1, 8181)` can:
-
 - Issue MCP `query` calls and exfiltrate the user's index contents
   (snippets, paths, full bodies via `multi_get` on a glob).
 - DNS-rebind a browser at a malicious page so its JavaScript can
@@ -334,7 +331,6 @@ All user-controlled data flows into SQLite via `db.prepare(...).run(...)
 either a constant or a model-derived integer (F-7).
 
 The two near-misses both turn out OK on inspection:
-
 - `findDocument` uses `LIKE \`%${filepath}\`` — but `filepath` is bound
   as a parameter (`.get(\`%${filepath}\`)`), and the `%` is added
   in JS, not in SQL (`src/store.ts:3438`). User-controlled `LIKE`
@@ -380,19 +376,18 @@ the corruption window is at indexing time only, and it's F-2.
 
 ## B6. Trust boundaries and input validation
 
-| Boundary                          | Validation                                                                                                  | Notes                                                                                                                  |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| YAML config → QMD                 | `YAML.parse` (`src/collections.ts:163`) wrapped in try/catch. No schema validation of fields beyond shape.  | `update_command` accepted as-is (F-1). `editor_uri` template substitution is `replace(/\{path\}/g, ...)` etc. — never `eval`'d. |
-| Env vars → QMD                    | `QMD_EMBED_MODEL` etc. accepted as literal strings, passed to node-llama-cpp's `resolveModelFile`.          | Mismatched dimensions are guarded with a clear error (`src/store.ts:1061-1066`).                                       |
-| MCP request → QMD                 | `zod` schemas on tool input (`src/mcp/server.ts:227-316, 371-376, 437-442, 510`). String length, types enforced. | `query` content goes to FTS sanitiser / vector embed (both safe). `path` argument flows into `findDocument` (DB-only). |
-| HTTP `/query` body → QMD          | `JSON.parse(rawBody)` then `String(s.query || "")` coercion (`src/mcp/server.ts:653-667`). Field-shape check only. | No size cap on body. Worth a `Content-Length` limit if exposed beyond loopback.                                        |
-| File contents → indexer           | None beyond the FTS5 sanitiser at query time. Bodies are stored verbatim.                                   | Markdown is treated as opaque text; no HTML rendering, no JS evaluation.                                                |
-| Editor URI template → terminal    | `encodeURI` on path; integer line/col (`src/cli/qmd.ts:1870-1912`). Wrapped in OSC 8 (`termLink`).           | `encodeURI` percent-encodes C0 control bytes including `\x07` and `\x1b`, so a malicious *path* cannot break the OSC 8 sequence. The template itself comes from env/YAML (user-controlled). |
+| Boundary                       | Validation                                                                                                           | Notes                                                                                                                                                                                       |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| YAML config → QMD              | `YAML.parse` (`src/collections.ts:163`) wrapped in try/catch. No schema validation of fields beyond shape.           | `update_command` accepted as-is (F-1). `editor_uri` template substitution is `replace(/\{path\}/g, ...)` etc. — never `eval`'d.                                                             |
+| Env vars → QMD                 | `QMD_EMBED_MODEL` etc. accepted as literal strings, passed to node-llama-cpp's `resolveModelFile`.                   | Mismatched dimensions are guarded with a clear error (`src/store.ts:1061-1066`).                                                                                                            |
+| MCP request → QMD              | `zod` schemas on tool input (`src/mcp/server.ts:227-316, 371-376, 437-442, 510`). String length, types enforced.     | `query` content goes to FTS sanitiser / vector embed (both safe). `path` argument flows into `findDocument` (DB-only).                                                                      |
+| HTTP `/query` body → QMD       | `JSON.parse(rawBody)` then `String(s.query \|\| "")` coercion (`src/mcp/server.ts:653-667`). Field-shape check only. | No size cap on body. Worth a `Content-Length` limit if exposed beyond loopback.                                                                                                             |
+| File contents → indexer        | None beyond the FTS5 sanitiser at query time. Bodies are stored verbatim.                                            | Markdown is treated as opaque text; no HTML rendering, no JS evaluation.                                                                                                                    |
+| Editor URI template → terminal | `encodeURI` on path; integer line/col (`src/cli/qmd.ts:1870-1912`). Wrapped in OSC 8 (`termLink`).                   | `encodeURI` percent-encodes C0 control bytes including `\x07` and `\x1b`, so a malicious *path* cannot break the OSC 8 sequence. The template itself comes from env/YAML (user-controlled). |
 
 ## B7. Patch cadence and maintainer track record
 
 `git log` over the pinned tree shows:
-
 - **432 total commits**, first commit `2025-12-07` (`Initial commit:
   QMD - Quick Markdown Search`), `v2.1.0` released `2026-04-05`. So
   ~5 months of development at high cadence (~85 commits / month).
@@ -464,22 +459,21 @@ For our wrapper: just don't expose this surface (F-1 mitigation).
 
 ## B12. Summary table
 
-| ID  | Severity                  | Category                    | File:line                                            | Status               |
-| --- | ------------------------- | --------------------------- | ---------------------------------------------------- | -------------------- |
-| F-1 | High *(by-design)*        | Local code execution        | `src/cli/qmd.ts:556-588`, `src/store.ts:811`         | Mitigate in our wrapper |
-| F-2 | Medium                    | Indirect file disclosure    | `src/store.ts:1189-1213`                             | Patch (containment check) |
-| F-3 | Medium                    | Trust boundary (HTTP MCP)   | `src/mcp/server.ts:796-799`, `:637-794`              | Disable / token in wrapper |
-| F-4 | Low                       | Logging                     | `src/mcp/server.ts:608-624`, `src/cli/qmd.ts:3203-3219` | Redact / chmod      |
-| F-5 | Low–Info                  | Supply chain                | `.github/workflows/ci.yml`                           | Add audit in our CI  |
-| F-6 | Info                      | Model integrity / trust path | `src/llm.ts:196-210`                                 | Pin / verify in wrapper |
-| F-7 | Info                      | DDL with interpolated int   | `src/store.ts:1069`                                  | Watch for future changes |
-| F-8 | Info                      | State-at-rest umask only    | `src/store.ts:530-547`, `src/db.ts:62`               | chmod 0600 in wrapper |
-| F-9 | Info                      | execSync (version banner)   | `src/cli/qmd.ts:2774`                                | Cosmetic             |
+| ID  | Severity           | Category                     | File:line                                               | Status                     |
+| --- | ------------------ | ---------------------------- | ------------------------------------------------------- | -------------------------- |
+| F-1 | High *(by-design)* | Local code execution         | `src/cli/qmd.ts:556-588`, `src/store.ts:811`            | Mitigate in our wrapper    |
+| F-2 | Medium             | Indirect file disclosure     | `src/store.ts:1189-1213`                                | Patch (containment check)  |
+| F-3 | Medium             | Trust boundary (HTTP MCP)    | `src/mcp/server.ts:796-799`, `:637-794`                 | Disable / token in wrapper |
+| F-4 | Low                | Logging                      | `src/mcp/server.ts:608-624`, `src/cli/qmd.ts:3203-3219` | Redact / chmod             |
+| F-5 | Low–Info           | Supply chain                 | `.github/workflows/ci.yml`                              | Add audit in our CI        |
+| F-6 | Info               | Model integrity / trust path | `src/llm.ts:196-210`                                    | Pin / verify in wrapper    |
+| F-7 | Info               | DDL with interpolated int    | `src/store.ts:1069`                                     | Watch for future changes   |
+| F-8 | Info               | State-at-rest umask only     | `src/store.ts:530-547`, `src/db.ts:62`                  | chmod 0600 in wrapper      |
+| F-9 | Info               | execSync (version banner)    | `src/cli/qmd.ts:2774`                                   | Cosmetic                   |
 
 ## B13. What we did not find
 
 The following were specifically searched and **no concern surfaced**:
-
 - SQL injection (§B3).
 - FTS5 query injection (§B4).
 - Path traversal at retrieval / search time (§B5; only F-2 at indexing).

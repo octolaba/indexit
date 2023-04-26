@@ -67,7 +67,6 @@ flowchart TB
 ```
 
 Deployable units:
-
 - Python package `cocoindex`, built by `maturin` with PyO3 bindings into `cocoindex._internal.core` (`research/cocoindex/pyproject.toml:1-4`, `research/cocoindex/pyproject.toml:59-69` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 - Rust workspace members `rust/core`, `rust/utils`, `rust/py`, `rust/py_utils`, and `rust/ops_text` (`research/cocoindex/Cargo.toml:1-8` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 - CLI command `cocoindex = "cocoindex.cli:cli"` (`research/cocoindex/pyproject.toml:56-57` @ `4432311228e4859201b457d3b6d978471692d0b1`).
@@ -99,7 +98,6 @@ flowchart LR
 ```
 
 Key components:
-
 - `App` registers with an environment, creates a Rust `core.App`, then starts updates by building a root component processor (`research/cocoindex/python/cocoindex/_internal/app.py:201-297`, `research/cocoindex/python/cocoindex/_internal/app.py:299-366` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 - `Environment` requires `Settings.db_path`, creates a `core.Environment`, and manages context, loop ownership, and a lazy lifespan (`research/cocoindex/python/cocoindex/_internal/environment.py:183-245`, `research/cocoindex/python/cocoindex/_internal/environment.py:343-417` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 - The Rust environment creates an LMDB `mdb` directory under `db_path`, configures max DBs/map size, clears stale readers, and holds target-provider and logic registries (`research/cocoindex/rust/core/src/engine/environment.rs:38-107` @ `4432311228e4859201b457d3b6d978471692d0b1`).
@@ -131,7 +129,6 @@ sequenceDiagram
 ```
 
 End-to-end, a pipeline does the following:
-
 1. Source connectors or user code enumerate files/rows/messages. Local filesystem `DirWalker.items()` yields `(relative_path, File)` pairs for `mount_each()` (`research/cocoindex/python/cocoindex/connectors/localfs/_source.py:147-168` @ `4432311228e4859201b457d3b6d978471692d0b1`). Postgres source streams rows inside a repeatable-read transaction (`research/cocoindex/python/cocoindex/connectors/postgres/_source.py:93-112` @ `4432311228e4859201b457d3b6d978471692d0b1`). Kafka exposes raw streams and keyed map feeds (`research/cocoindex/python/cocoindex/connectors/kafka/_source.py:1-8` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 2. `mount_each()` turns keyed items into independent child components (`research/cocoindex/python/cocoindex/_internal/api.py:445-529` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 3. Memoization keys combine function identity, version, args, kwargs, and registered memo hooks (`research/cocoindex/python/cocoindex/_internal/memo_fingerprint.py:333-397` @ `4432311228e4859201b457d3b6d978471692d0b1`).
@@ -143,26 +140,22 @@ End-to-end, a pipeline does the following:
 ## Storage backends and indices
 
 Internal storage:
-
 - LMDB under `db_path/mdb`, configured by `lmdb_max_dbs` and `lmdb_map_size` (`research/cocoindex/rust/core/src/engine/environment.rs:73-90` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 - Docs state LMDB tracks target states and memoization results, and `COCOINDEX_DB` supplies the path when not set programmatically (`research/cocoindex/docs/src/content/docs/advanced_topics/internal_storage.mdx:1-33` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 
 Target storage:
-
 - Relational/vector-capable: Postgres with optional pgvector (`research/cocoindex/python/cocoindex/connectors/postgres/_target.py:944-994` @ `4432311228e4859201b457d3b6d978471692d0b1`), SQLite with sqlite-vec virtual tables (`research/cocoindex/python/cocoindex/connectors/sqlite/_target.py:121-151` @ `4432311228e4859201b457d3b6d978471692d0b1`), Doris.
 - Vector DBs: LanceDB, Qdrant, Turbopuffer.
 - Graph DBs: Neo4j, FalkorDB, SurrealDB.
 - Streams/files: Kafka and local filesystem targets.
 
 Vector schema:
-
 - `VectorSchema` and `VectorSchemaProvider` let connectors infer vector dimensions/dtypes from annotations or embedder instances (`research/cocoindex/docs/src/content/docs/common_resources/vector_schema.mdx:8-49`, `research/cocoindex/docs/src/content/docs/common_resources/vector_schema.mdx:109-113` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 - `MultiVectorSchema` supports multi-vector representations such as ColBERT/ColPali-style token vectors (`research/cocoindex/docs/src/content/docs/common_resources/vector_schema.mdx:111-121` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 
 ## Extension points and plugin surfaces
 
 Stable-looking public surfaces:
-
 - Public API re-exported from `cocoindex.__init__` (`research/cocoindex/python/cocoindex/__init__.py:10-15` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 - `@coco.fn` and `@coco.fn.as_async` decorators (`research/cocoindex/python/cocoindex/_internal/function.py:1838-2015` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 - `ContextKey`/`EnvironmentBuilder.provide()` for shared resources (`research/cocoindex/python/cocoindex/_internal/environment.py:87-116` @ `4432311228e4859201b457d3b6d978471692d0b1`).
@@ -171,7 +164,6 @@ Stable-looking public surfaces:
 - `FileLike`, `FilePathMatcher`, and `PatternFilePathMatcher` for source/file abstractions (`research/cocoindex/python/cocoindex/resources/file.py:40-67`, `research/cocoindex/python/cocoindex/resources/file.py:205-259` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 
 Private/internal surfaces:
-
 - Most modules live under `_internal` or connector-private `_target.py` / `_source.py`, so code depending on connector internals should be treated as fragile.
 - The Rust/PyO3 core is not a stable external API; Python wrappers are the intended integration layer.
 

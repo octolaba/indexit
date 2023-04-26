@@ -1,19 +1,17 @@
 # CocoIndex — Architecture
 
-| Field          | Value                                                                                                       |
-| -------------- | ----------------------------------------------------------------------------------------------------------- |
-| Subject        | [cocoindex-io/cocoindex](https://github.com/cocoindex-io/cocoindex)                                         |
-| Pinned tag     | `v1.0.3`                                                                                                    |
-| Pinned commit  | `4432311228e4859201b457d3b6d978471692d0b1`                                                                  |
-| Vendored at    | `research/cocoindex/`                                                                                       |
-| Analyst        | `claude-opus-4.7` (1M-context, effort: high)                                                               |
-| Scope          | §3.1 + §4.1 of `CLAUDE.md` / `AGENTS.md`. Static, read-only review.                                         |
+| Field         | Value                                                               |
+| ------------- | ------------------------------------------------------------------- |
+| Subject       | [cocoindex-io/cocoindex](https://github.com/cocoindex-io/cocoindex) |
+| Pinned tag    | `v1.0.3`                                                            |
+| Pinned commit | `4432311228e4859201b457d3b6d978471692d0b1`                          |
+| Vendored at   | `research/cocoindex/`                                               |
+| Analyst       | `claude-opus-4.7` (1M-context, effort: high)                        |
+| Scope         | §3.1 + §4.1 of `CLAUDE.md` / `AGENTS.md`. Static, read-only review. |
 
 > **Caveat.** v1 is a *fundamental redesign* over v0 (research/cocoindex/CLAUDE.md:296;
 > README banner). v0 documentation, blog posts, and any third-party tutorials older
 > than mid-2025 describe a different architecture. This report covers **v1.0.3 only**.
-
----
 
 ## 1. Problem statement
 
@@ -30,8 +28,6 @@ The framework ships built-in connectors for filesystems, object stores,
 databases, vector stores, graph stores, and Kafka, plus operators for
 recursive text splitting, sentence-transformers and LiteLLM-driven embedding,
 and entity resolution.
-
----
 
 ## 2. C4 — Level 1: System Context
 
@@ -64,8 +60,6 @@ framework runs as a library inside a process the operator controls (CLI or
 embedded). The Scarf telemetry edge is the *only* outbound call CocoIndex
 itself originates without the user's pipeline asking for it
 (rust/core/src/telemetry/mod.rs:1–117); see security.md §B7 / §B8.
-
----
 
 ## 3. C4 — Level 2: Containers
 
@@ -148,8 +142,6 @@ funnel through `TxnBatcher` (rust/core/src/engine/txn_batcher.rs:11–65) which
 serialises writes to amortise fsync; this also means in-process write
 concurrency is single-threaded by design.
 
----
-
 ## 4. C4 — Level 3: Components (engine internals)
 
 ```mermaid
@@ -190,7 +182,6 @@ flowchart LR
 
 Key invariants the engine maintains, observable in `state/db_schema.rs:1–92`
 and `engine/execution.rs`:
-
 1. **Stable component path → identity.** Every processing component (a unit of
    work declared by `coco.mount`/`use_mount`) is anchored at a stable path
    composed of names. Re-runs at the same path are joined to their previous
@@ -206,8 +197,6 @@ and `engine/execution.rs`:
    transaction batched by `TxnBatcher`. Cross-component atomicity is not
    provided — that is by design, to allow large pipelines to make incremental
    progress.
-
----
 
 ## 5. End-to-end indexing pipeline (data flow)
 
@@ -251,7 +240,6 @@ sequenceDiagram
 ```
 
 A few details that are easy to miss from the README alone:
-
 * **Source iteration is async.** All built-in source connectors expose
   `async` iterators or generators (e.g., the Google Drive and S3 connectors
   use `aiohttp` / `aiobotocore`).
@@ -261,8 +249,6 @@ A few details that are easy to miss from the README alone:
 * **State changes flush per-component, not per-batch.** A failure mid-pipeline
   leaves earlier components committed; on restart only the unfinished tail
   re-runs, gated by fingerprint.
-
----
 
 ## 6. Mandatory questions (§4.1)
 
@@ -293,7 +279,6 @@ including deletion when a source item disappears.
 ### Indexing pipeline end-to-end
 
 See §5 for the sequence diagram. End-to-end:
-
 1. **Source iteration** by a connector (`python/cocoindex/connectors/<src>/_source.py`).
 2. **Per-item fingerprinting**, possibly with `mtime`/`size` + content hash for
    files, or row PKs for databases.
@@ -306,26 +291,26 @@ See §5 for the sequence diagram. End-to-end:
 
 ### Storage backends and indices
 
-| Role                | Backend(s)                                                                                                                                                                                                                          |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Engine state        | LMDB via heed 0.22 (research/cocoindex/rust/core/Cargo.toml:14; default path `~/.cocoindex/`).                                                                                                                                       |
-| Vector store        | Postgres + pgvector (research/cocoindex/Cargo.toml:43); Qdrant; LanceDB; SQLite + sqlite-vec; Turbopuffer.                                                                                                                           |
-| Relational target   | Postgres (asyncpg); Apache Doris (MySQL wire).                                                                                                                                                                                      |
-| Graph target        | Neo4j; FalkorDB; SurrealDB.                                                                                                                                                                                                         |
-| Stream target       | Kafka.                                                                                                                                                                                                                              |
-| Blob/file target    | Local filesystem (`localfs.DirTarget`).                                                                                                                                                                                              |
-| Full-text search    | **Not provided as a first-class target.** Users can lean on Postgres FTS or external systems; CocoIndex itself only exposes vector and KV-shaped targets.                                                                            |
+| Role              | Backend(s)                                                                                                                                                |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Engine state      | LMDB via heed 0.22 (research/cocoindex/rust/core/Cargo.toml:14; default path `~/.cocoindex/`).                                                            |
+| Vector store      | Postgres + pgvector (research/cocoindex/Cargo.toml:43); Qdrant; LanceDB; SQLite + sqlite-vec; Turbopuffer.                                                |
+| Relational target | Postgres (asyncpg); Apache Doris (MySQL wire).                                                                                                            |
+| Graph target      | Neo4j; FalkorDB; SurrealDB.                                                                                                                               |
+| Stream target     | Kafka.                                                                                                                                                    |
+| Blob/file target  | Local filesystem (`localfs.DirTarget`).                                                                                                                   |
+| Full-text search  | **Not provided as a first-class target.** Users can lean on Postgres FTS or external systems; CocoIndex itself only exposes vector and KV-shaped targets. |
 
 ### Extension points and plugin surfaces
 
-| Surface                            | Status                                                                                                                                                                                                                                                          |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@coco.fn` user functions          | **Stable public.** The decorator is the canonical way to write a processing step. (`python/cocoindex/__init__.py` re-exports; `_internal/function.py` is implementation.)                                                                                       |
-| `Target` declaration objects       | **Stable public.** Each connector exports its target builders (e.g. `qdrant.CollectionTarget`, `postgres.TableTarget`, `localfs.DirTarget`).                                                                                                                    |
-| `VectorSchemaProvider` for embeds  | **Stable public.** `python/cocoindex/resources/schema.py` defines the protocol; `sentence_transformers.SentenceTransformerEmbedder` and `litellm.LiteLLMEmbedder` are reference implementations.                                                                |
-| Custom connector contract          | **Not promised stable.** Connectors live under `python/cocoindex/connectors/<name>/` and use `connectorkits/` plus `_internal` types. Building a third-party connector is feasible by mirroring an existing one but the inner contract is not versioned API.    |
-| Engine internals                   | **Internal.** Modules under `_internal/` and Rust crates are not part of the user-facing API. Upstream `CLAUDE.md` formalises this with the underscore-prefix convention (research/cocoindex/CLAUDE.md:144–164).                                                |
-| `Context` / `ContextKey`           | **Stable public.** React-style provider for shared resources (DB pools, clients).                                                                                                                                                                                |
+| Surface                           | Status                                                                                                                                                                                                                                                       |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@coco.fn` user functions         | **Stable public.** The decorator is the canonical way to write a processing step. (`python/cocoindex/__init__.py` re-exports; `_internal/function.py` is implementation.)                                                                                    |
+| `Target` declaration objects      | **Stable public.** Each connector exports its target builders (e.g. `qdrant.CollectionTarget`, `postgres.TableTarget`, `localfs.DirTarget`).                                                                                                                 |
+| `VectorSchemaProvider` for embeds | **Stable public.** `python/cocoindex/resources/schema.py` defines the protocol; `sentence_transformers.SentenceTransformerEmbedder` and `litellm.LiteLLMEmbedder` are reference implementations.                                                             |
+| Custom connector contract         | **Not promised stable.** Connectors live under `python/cocoindex/connectors/<name>/` and use `connectorkits/` plus `_internal` types. Building a third-party connector is feasible by mirroring an existing one but the inner contract is not versioned API. |
+| Engine internals                  | **Internal.** Modules under `_internal/` and Rust crates are not part of the user-facing API. Upstream `CLAUDE.md` formalises this with the underscore-prefix convention (research/cocoindex/CLAUDE.md:144–164).                                             |
+| `Context` / `ContextKey`          | **Stable public.** React-style provider for shared resources (DB pools, clients).                                                                                                                                                                            |
 
 ### Runtime model
 
@@ -369,8 +354,6 @@ See §5 for the sequence diagram. End-to-end:
 * **Optional ML libraries.** sentence-transformers, transformers, torch,
   litellm, faiss (declared in `pyproject.toml` extras / examples).
 
----
-
 ## 7. Notable architectural traits & gotchas
 
 * **"Workspace `version = "999.0.0"`"** (research/cocoindex/Cargo.toml:12).
@@ -394,8 +377,6 @@ See §5 for the sequence diagram. End-to-end:
 * **Connectors are not a versioned plugin API.** Building a third-party
   connector means tracking internal types like `TargetActionSink` and
   `TargetReconcileOutput` across releases.
-
----
 
 ## 8. References
 

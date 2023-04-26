@@ -1,33 +1,31 @@
 # CocoIndex — Security review
 
-| Field          | Value                                                                                                       |
-| -------------- | ----------------------------------------------------------------------------------------------------------- |
-| Subject        | [cocoindex-io/cocoindex](https://github.com/cocoindex-io/cocoindex)                                         |
-| Pinned tag     | `v1.0.3`                                                                                                    |
-| Pinned commit  | `4432311228e4859201b457d3b6d978471692d0b1`                                                                  |
-| Vendored at    | `research/cocoindex/`                                                                                       |
-| Analyst        | `claude-opus-4.7` (1M-context, effort: high)                                                               |
-| Scope          | §3.2 + §4.2 of `CLAUDE.md` / `AGENTS.md`. Static, read-only review. No fuzzing, no execution, no network.   |
-| Threat model   | Single-user developer or batch operator running CocoIndex against directories, databases, and SaaS sources they own or are authorised to read. **Not** a multi-tenant or hostile-user threat model — CocoIndex does not attempt to provide one. |
+| Field         | Value                                                                                                                                                                                                                                           |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Subject       | [cocoindex-io/cocoindex](https://github.com/cocoindex-io/cocoindex)                                                                                                                                                                             |
+| Pinned tag    | `v1.0.3`                                                                                                                                                                                                                                        |
+| Pinned commit | `4432311228e4859201b457d3b6d978471692d0b1`                                                                                                                                                                                                      |
+| Vendored at   | `research/cocoindex/`                                                                                                                                                                                                                           |
+| Analyst       | `claude-opus-4.7` (1M-context, effort: high)                                                                                                                                                                                                    |
+| Scope         | §3.2 + §4.2 of `CLAUDE.md` / `AGENTS.md`. Static, read-only review. No fuzzing, no execution, no network.                                                                                                                                       |
+| Threat model  | Single-user developer or batch operator running CocoIndex against directories, databases, and SaaS sources they own or are authorised to read. **Not** a multi-tenant or hostile-user threat model — CocoIndex does not attempt to provide one. |
 
 > **Frame.** This is the answer to the §4.2 questionnaire plus an
 > independent code-level scan beyond CVE/OSV/Dependabot. Where a category
 > was reviewed and produced no concrete finding, that is recorded
 > explicitly rather than skipped.
 
----
-
 ## Findings summary
 
-| ID    | Severity¹ | Category                      | Title                                                                          | Status                |
-| ----- | --------- | ----------------------------- | ------------------------------------------------------------------------------ | --------------------- |
-| F-1   | Medium    | Path traversal (symlinks)     | localfs walker follows symlinks; no allowlist / `realpath` containment check   | New, not in CVE/OSV   |
-| F-2   | Low–Med   | Privacy / data egress         | Anonymous usage telemetry POSTs to Scarf gateway by default in release builds  | Documented, opt-out   |
-| F-3   | Low       | Trust boundary (IPC)          | GPU subprocess uses unrestricted `pickle.loads` over a parent–child pipe       | Trusted-by-design     |
-| F-4   | Low       | Sandboxing                    | User `@coco.fn` code runs in the host interpreter with no resource limits      | By design             |
-| F-5   | Low       | Supply chain                  | No `cargo-audit`, `cargo-deny`, or `pip-audit` in CI / pre-commit              | Gap                   |
-| F-6   | Info      | Auth surface                  | `axum` is in workspace deps but no HTTP server is exposed in v1.0.3            | Dead/scaffolded code  |
-| F-7   | Info      | State at rest                 | LMDB env at `~/.cocoindex` inherits umask only; no application-level ACL       | By design             |
+| ID  | Severity¹ | Category                  | Title                                                                         | Status               |
+| --- | --------- | ------------------------- | ----------------------------------------------------------------------------- | -------------------- |
+| F-1 | Medium    | Path traversal (symlinks) | localfs walker follows symlinks; no allowlist / `realpath` containment check  | New, not in CVE/OSV  |
+| F-2 | Low–Med   | Privacy / data egress     | Anonymous usage telemetry POSTs to Scarf gateway by default in release builds | Documented, opt-out  |
+| F-3 | Low       | Trust boundary (IPC)      | GPU subprocess uses unrestricted `pickle.loads` over a parent–child pipe      | Trusted-by-design    |
+| F-4 | Low       | Sandboxing                | User `@coco.fn` code runs in the host interpreter with no resource limits     | By design            |
+| F-5 | Low       | Supply chain              | No `cargo-audit`, `cargo-deny`, or `pip-audit` in CI / pre-commit             | Gap                  |
+| F-6 | Info      | Auth surface              | `axum` is in workspace deps but no HTTP server is exposed in v1.0.3           | Dead/scaffolded code |
+| F-7 | Info      | State at rest             | LMDB env at `~/.cocoindex` inherits umask only; no application-level ACL      | By design            |
 
 ¹ Severities reflect the **default deployment** (single-user developer/batch
 operator). They climb in shared / multi-user / untrusted-input contexts.
@@ -38,15 +36,12 @@ injection (`§B3-SQL`), insecure TLS (`§B5`), unsafe Rust
 input (`§B3-eval`), pickle deserialisation of untrusted data when
 unrestricted (`§B3-pickle` — `_RestrictedUnpickler` allowlist holds).
 
----
-
 ## §B1. Authentication & authorisation
 
 **No HTTP server is started by CocoIndex v1.0.3.** The only `axum::serve(...)`
 call is inside a `#[cfg(test)]` block that spins up a mock HTTP server for
 the telemetry unit tests (rust/core/src/telemetry/mod.rs:166–183). Every other
 axum reference is type-only:
-
 * `rust/core/Cargo.toml:35` — workspace dep.
 * `rust/utils/Cargo.toml:12` — workspace dep.
 * `rust/utils/src/error.rs:1–5` — uses `axum::http::StatusCode`,
@@ -66,24 +61,20 @@ telemetry POST (see §B7). Everything else (database connections,
 embedding APIs, Google Drive, S3, OCI, Kafka) is initiated by user-defined
 pipelines using credentials the operator supplies.
 
----
-
 ## §B2. Trust boundaries
 
-| Boundary                                | Enforcement                                                                                                                               |
-| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| User Python module loaded by CLI        | None (`python/cocoindex/_internal/user_app_loader.py` uses `importlib.spec.loader.exec_module`). Treated as fully trusted code.            |
-| `@coco.fn` user functions               | None. Run in-process; can do anything the interpreter can. Memoization fingerprint is cache-only, not authorisation.                       |
-| LMDB state directory (read & write)    | Filesystem ACLs only. No application-level integrity tag, no encryption, no MAC. Tampering is detectable only via the restricted unpickler invariant (§B3 / `serde.py:185–195`). |
-| Source connector input                  | Source-level: pathlib/SQL/SDK; no normalisation across connectors.                                                                         |
-| Embedding/LLM HTTP responses            | reqwest validates TLS + status; payload is parsed via `serde_json` / numpy with shape checks at the call site.                             |
-| Telemetry to Scarf                      | reqwest with rustls; payload is hard-coded fields — no user data, see §B7.                                                                |
-| GPU subprocess IPC                      | Local pipe; payload is `pickle`. Trusted because both ends are spawned by the same user.                                                  |
+| Boundary                            | Enforcement                                                                                                                                                                      |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| User Python module loaded by CLI    | None (`python/cocoindex/_internal/user_app_loader.py` uses `importlib.spec.loader.exec_module`). Treated as fully trusted code.                                                  |
+| `@coco.fn` user functions           | None. Run in-process; can do anything the interpreter can. Memoization fingerprint is cache-only, not authorisation.                                                             |
+| LMDB state directory (read & write) | Filesystem ACLs only. No application-level integrity tag, no encryption, no MAC. Tampering is detectable only via the restricted unpickler invariant (§B3 / `serde.py:185–195`). |
+| Source connector input              | Source-level: pathlib/SQL/SDK; no normalisation across connectors.                                                                                                               |
+| Embedding/LLM HTTP responses        | reqwest validates TLS + status; payload is parsed via `serde_json` / numpy with shape checks at the call site.                                                                   |
+| Telemetry to Scarf                  | reqwest with rustls; payload is hard-coded fields — no user data, see §B7.                                                                                                       |
+| GPU subprocess IPC                  | Local pipe; payload is `pickle`. Trusted because both ends are spawned by the same user.                                                                                         |
 
 Where these boundaries leak in practice: see F-1 (symlinks crossing the
 "localfs root" boundary).
-
----
 
 ## §B3. Input validation, deserialisation, injection
 
@@ -101,7 +92,6 @@ operator's own pipeline file — by design and not a finding.
 
 ### §B3-pickle — pickle deserialisation
 Three call sites:
-
 1. **Memoization fingerprinting** — `python/cocoindex/_internal/memo_fingerprint.py:323`
    only calls `pickle.dumps(...)`; never `loads`. Bytes are hashed for cache
    keys, never re-instantiated. No risk.
@@ -150,7 +140,6 @@ root" check would be required to block them. `grep -rn "is_symlink\|symlink\|lst
 returns no results — confirmed absent.
 
 Concrete consequence:
-
 * A symlink at `<root>/inner/escape` pointing to `/etc/passwd` is reported
   as a regular file; `entry.relative_to(root_resolved)` returns
   `inner/escape` (the symlink path is under `root_resolved`); reading goes
@@ -178,8 +167,6 @@ license-attribution HTML at release time (see release.yml `Generate
 THIRD_PARTY_NOTICES.html`). It runs against `Cargo.lock` data, not
 user input. **Reviewed, no issues found.**
 
----
-
 ## §B4. Secrets & credentials
 
 * **Provisioning** — credentials reach CocoIndex through environment
@@ -201,8 +188,6 @@ user input. **Reviewed, no issues found.**
 shell that launches CocoIndex (and any `.env` file it reads) as a
 secret store.
 
----
-
 ## §B5. Transport security (TLS)
 
 `reqwest = { workspace = true, default-features = false, features = ["json", "rustls-tls"] }`
@@ -210,8 +195,6 @@ secret store.
 and pulls only `rustls`. No `danger_accept_invalid_certs`,
 `accept_invalid_hostnames`, or `disable_hostname_verification` calls
 anywhere in `rust/` or `python/`. **Reviewed, no issues found.**
-
----
 
 ## §B6. Multi-tenant / multi-user isolation
 
@@ -222,12 +205,9 @@ running separate processes with separate `~/.cocoindex` directories.
 
 **By design.** Recorded for the applicability matrix; not a finding.
 
----
-
 ## §B7. Anonymous usage telemetry (F-2)
 
 `rust/core/src/telemetry/mod.rs:1–117` ships an opt-out telemetry client.
-
 * **What is sent.** `EventPayload { event, platform, lang }`
   (`telemetry/mod.rs:31–36`). `platform` is `"{ARCH}-{OS}"`
   (`telemetry/mod.rs:86–88`); `lang` is the host language tag, e.g.
@@ -261,8 +241,6 @@ default `COCOINDEX_DISABLE_USAGE_TRACKING` to a truthy value at startup,
 or remove the call site from the build, or document the egress
 prominently. Logged as **F-2**.
 
----
-
 ## §B8. Logging hygiene
 
 `tracing` is wired up in the Rust core (`tracing = { version = "0.1", features = ["log"] }`,
@@ -273,8 +251,6 @@ side uses `log` and `rich`. Pipelines that want verbose output
 names, item counts, and statistics — not file content or embeddings.
 **Reviewed, no concrete leakage found.** Custom user `@coco.fn` code
 can of course log anything; that is the operator's responsibility.
-
----
 
 ## §B9. Supply chain (F-5)
 
@@ -306,8 +282,6 @@ can of course log anything; that is the operator's responsibility.
   serde 1.0.228, heed 0.22, asyncpg via Python. No abandoned-looking
   crates were spotted in `Cargo.toml`.
 
----
-
 ## §B-rust-unsafe — Unsafe Rust
 
 `grep -rn "\bunsafe \b\|\bunsafe{" rust/ --include="*.rs"` (with comment
@@ -315,8 +289,6 @@ filtering) returns **0 matches** in CocoIndex's own code. PyO3 itself
 contains internal unsafe, of course, but the boundary is the audited
 PyO3 surface, not first-party `unsafe` blocks. **Reviewed, no
 first-party unsafe.**
-
----
 
 ## §B10. Sandboxing of user code (F-4)
 
@@ -335,14 +307,11 @@ any deployment that runs *third-party* pipelines (e.g. tenant-uploaded
 plugins) needs an external sandbox: container with cgroup limits,
 dedicated user, no inherited credentials.
 
----
-
 ## §B11. State at rest (F-7)
 
 The LMDB env is created with the OS umask. There is no application-level
 encryption, no integrity tag, no per-app salt. Anyone with read access to
 `~/.cocoindex/` (or whatever `COCOINDEX_DB` points at) can:
-
 * enumerate component paths and target-state descriptors,
 * read the fingerprint blobs (msgpack / pickle-serialised — but constrained
   by `_RestrictedUnpickler` on read; see §B3-pickle).
@@ -354,8 +323,6 @@ but they can DoS the indexing pipeline.
 Recorded as **F-7** (informational, by design): operators who run
 CocoIndex on shared hosts should chmod the state directory and the
 `.env` files together as one secret-sensitive set.
-
----
 
 ## §B12. Release cadence and maintainer responsiveness
 
@@ -370,42 +337,37 @@ CocoIndex on shared hosts should chmod the state directory and the
 * **Contributor distribution** (`git log --since="1 year ago"
   --format="%an" | sort | uniq -c | sort -rn | head -10`):
 
-  | Author (alias)        | Commits, last 12 mo |
-  | --------------------- | ------------------- |
-  | Jiangzhou             | 605                 |
-  | LJ                    | 194                 |
-  | George                | 169                 |
-  | Linghua               | 107                 |
-  | George He             | 41                  |
-  | Miao                  | 28                  |
-  | Srihari Thyagarajan   | 25                  |
-  | LJ 🥥🌴               | 25                  |
-  | Jiangzhou He          | 24                  |
-  | Shannon Ning Yang     | 23                  |
+  | Author (alias)      | Commits, last 12 mo |
+  | ------------------- | ------------------- |
+  | Jiangzhou           | 605                 |
+  | LJ                  | 194                 |
+  | George              | 169                 |
+  | Linghua             | 107                 |
+  | George He           | 41                  |
+  | Miao                | 28                  |
+  | Srihari Thyagarajan | 25                  |
+  | LJ 🥥🌴             | 25                  |
+  | Jiangzhou He        | 24                  |
+  | Shannon Ning Yang   | 23                  |
 
   Aliases overlap (`Jiangzhou` ≈ `Jiangzhou He`; `LJ` ≈ `LJ 🥥🌴`;
   `George` ≈ `George He`). Even after collapsing aliases, the commit
   graph is dominated by one author (~629 of ~1,400 commits, ≈45 %).
   See applicability.md §C5 for the bus-factor implication.
-
 * **Security policy.** `.github/SECURITY.md` exists. Reports go to
   `security@cocoindex.io`; the policy promises to "respond as soon as
   we can" and to "release fixes as soon as practical after
   verification" — i.e. no SLA, no PGP key, no public advisory channel
   documented. There is no `SECURITY-INSIGHTS.yml` or GitHub Security
   Advisory artifacts in the vendored copy.
-
 * **CVE / advisory history.** Not assessed from the vendored snapshot;
   CLAUDE.md §3.2 explicitly directs us to look beyond CVE/OSV. The
   scan above (F-1, F-2, F-3, F-4, F-5, F-7) constitutes the
   beyond-databases findings.
 
----
-
 ## §B13. Recommendations to downstream adopters
 
 Ordered by effort × impact:
-
 1. **Default-disable telemetry.** Whatever wraps CocoIndex (a fork, a
    service, or a CLI subcommand) should set
    `COCOINDEX_DISABLE_USAGE_TRACKING=1` before any CocoIndex import
@@ -430,8 +392,6 @@ Ordered by effort × impact:
 These translate directly into the adoption work itemised in
 `applicability.md`.
 
----
-
 ## §B14. Out of scope (explicitly)
 
 * Dynamic / fuzz / DAST testing (would require code execution; the
@@ -444,8 +404,6 @@ These translate directly into the adoption work itemised in
   own security posture.
 * CVE/OSV/Dependabot output — explicitly de-prioritised by §3.2 of
   `CLAUDE.md`.
-
----
 
 ## §B15. References
 

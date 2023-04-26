@@ -1,11 +1,11 @@
 # QMD v2.1.0 — Applicability for indexit
 
-| Field         | Value                                                                                                       |
-| ------------- | ----------------------------------------------------------------------------------------------------------- |
-| Subject       | [tobi/qmd](https://github.com/tobi/qmd) @ `v2.1.0`                                                          |
-| Pinned commit | `65cd1b3fd02891d1ee0eefa751620918664fa321`                                                                  |
-| Vendored at   | `research/qmd/`                                                                                             |
-| Analyst       | claude-opus-4.7, effort=xhigh                                                                               |
+| Field         | Value                                              |
+| ------------- | -------------------------------------------------- |
+| Subject       | [tobi/qmd](https://github.com/tobi/qmd) @ `v2.1.0` |
+| Pinned commit | `65cd1b3fd02891d1ee0eefa751620918664fa321`         |
+| Vendored at   | `research/qmd/`                                    |
+| Analyst       | claude-opus-4.7, effort=xhigh                      |
 
 This document answers CLAUDE.md §3.3 and §4.3 — fit for indexit's two
 goals (Sparkle-consistent cross-source indexing and multimodal semantic
@@ -16,7 +16,6 @@ pinned commit.
 
 QMD has **no taxonomy primitives at all**. The only categorical
 attributes a document carries are:
-
 - `documents.collection` — a flat string naming a directory tree
   (`src/store.ts:757-770`);
 - `documents.path` — the relative filesystem path inside that tree;
@@ -31,15 +30,15 @@ names / path prefixes, or (b) carry our own sidecar table.
 
 Concrete bucket-by-bucket assessment:
 
-| Sparkle bucket | Fit       | Rationale (with citations)                                                                                                                                       |
-| -------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **S — Stream** | **Poor**  | QMD has no notion of "inbox / unread / triaged". Stream is high-velocity, cross-source, often non-markdown — exactly what QMD doesn't ingest.                  |
-| **P — Projects** | **Marginal** | A project ≈ a markdown folder works mechanically (one collection per project), but the *time-bounded* and *outcome* aspects are not modelled — there is no completion / archive state. |
-| **A — Areas** | **Marginal** | Same as P — a folder per area works for markdown notes only.                                                                                                  |
-| **R — Resources** | **Marginal** | Reference material is rarely all markdown; PDFs, web clippings, images don't fit QMD. For pure markdown wikis, fine.                                       |
-| **K — Knowledge** | **Strong** | This is QMD's actual sweet spot — *crystallised, hand-curated markdown notebooks* (Zettelkasten, Obsidian-style vaults) are exactly the corpus the project optimises for. The smart chunker, rerank, and `context add` features fit. |
-| **L — Legacy / Archived** | **Marginal** | A separate "archive" collection works mechanically; there is no first-class archival status (only `documents.active = 0` for missing-from-disk).        |
-| **E — Essentials** | **Poor**  | Identity / worldview material is usually structured but small — QMD doesn't help, and using collections for "self" reduces it to one more folder.            |
+| Sparkle bucket            | Fit          | Rationale (with citations)                                                                                                                                                                                                           |
+| ------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **S — Stream**            | **Poor**     | QMD has no notion of "inbox / unread / triaged". Stream is high-velocity, cross-source, often non-markdown — exactly what QMD doesn't ingest.                                                                                        |
+| **P — Projects**          | **Marginal** | A project ≈ a markdown folder works mechanically (one collection per project), but the *time-bounded* and *outcome* aspects are not modelled — there is no completion / archive state.                                               |
+| **A — Areas**             | **Marginal** | Same as P — a folder per area works for markdown notes only.                                                                                                                                                                         |
+| **R — Resources**         | **Marginal** | Reference material is rarely all markdown; PDFs, web clippings, images don't fit QMD. For pure markdown wikis, fine.                                                                                                                 |
+| **K — Knowledge**         | **Strong**   | This is QMD's actual sweet spot — *crystallised, hand-curated markdown notebooks* (Zettelkasten, Obsidian-style vaults) are exactly the corpus the project optimises for. The smart chunker, rerank, and `context add` features fit. |
+| **L — Legacy / Archived** | **Marginal** | A separate "archive" collection works mechanically; there is no first-class archival status (only `documents.active = 0` for missing-from-disk).                                                                                     |
+| **E — Essentials**        | **Poor**     | Identity / worldview material is usually structured but small — QMD doesn't help, and using collections for "self" reduces it to one more folder.                                                                                    |
 
 So QMD is essentially a **K-bucket-shaped tool**. Trying to drive
 S/P/A/R/L/E through it is forcing collections-as-namespaces, which
@@ -49,21 +48,21 @@ loses precisely the metadata that would make Sparkle valuable.
 
 What survives ingestion:
 
-| Source attribute                        | Preserved? | Where                                                                                       |
-| --------------------------------------- | ---------- | ------------------------------------------------------------------------------------------- |
-| Filesystem path (relative to collection) | Yes      | `documents.path` (`src/store.ts:757-770`).                                                  |
-| Collection / source name                | Yes        | `documents.collection`. Implicitly the only "source identity".                              |
-| Content hash                            | Yes (SHA-256) | `content.hash` (`src/store.ts:747-753`); used as content-addressable dedup at indexing time. |
-| Title                                   | Yes        | Extracted from first heading or filename (`src/store.ts:2045`).                             |
-| `mtime` / `birthtime`                   | Captured   | `documents.created_at` / `modified_at` from `statSync` (`src/store.ts:1240-1251`); not exposed in search results (`modifiedAt: ""` in `src/store.ts:2988`). |
-| Path-level free-text context            | Yes        | `path_contexts` → `store_collections.context` (`src/store.ts:914-933`).                     |
-| File mode / owner / group               | **No**     | QMD's schema has no column for them.                                                        |
-| MIME / file type                        | **No**     | Implicit "markdown".                                                                        |
-| External system ID (e.g. Notion page id, Linear ticket id) | **No** | No column. Encoding it in path is the only escape hatch.                                    |
-| Permissions / ACLs                      | **No**     | Same.                                                                                        |
-| Cross-source dedup                      | **No (intra-collection only)** | `content.hash` dedupes identical bodies *within* the index. Two different sources of the same content would dedup at body level, but the doc rows remain distinct. There is no entity-resolution operator. |
-| Sync semantics                          | **Partial** | `reindexCollection` re-globs and (a) hashes new content, (b) updates titles / hashes when files change, (c) deactivates rows for missing paths, (d) cleans orphaned content. There is no cross-source reconciliation, no last-write-wins, no versioning. (`src/store.ts:1228-1268`.) |
-| Conflict state                          | **No**     | No notion of conflicts because there is no source-of-truth competition; the filesystem is authoritative.                                              |
+| Source attribute                                           | Preserved?                     | Where                                                                                                                                                                                                                                                                                |
+| ---------------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Filesystem path (relative to collection)                   | Yes                            | `documents.path` (`src/store.ts:757-770`).                                                                                                                                                                                                                                           |
+| Collection / source name                                   | Yes                            | `documents.collection`. Implicitly the only "source identity".                                                                                                                                                                                                                       |
+| Content hash                                               | Yes (SHA-256)                  | `content.hash` (`src/store.ts:747-753`); used as content-addressable dedup at indexing time.                                                                                                                                                                                         |
+| Title                                                      | Yes                            | Extracted from first heading or filename (`src/store.ts:2045`).                                                                                                                                                                                                                      |
+| `mtime` / `birthtime`                                      | Captured                       | `documents.created_at` / `modified_at` from `statSync` (`src/store.ts:1240-1251`); not exposed in search results (`modifiedAt: ""` in `src/store.ts:2988`).                                                                                                                          |
+| Path-level free-text context                               | Yes                            | `path_contexts` → `store_collections.context` (`src/store.ts:914-933`).                                                                                                                                                                                                              |
+| File mode / owner / group                                  | **No**                         | QMD's schema has no column for them.                                                                                                                                                                                                                                                 |
+| MIME / file type                                           | **No**                         | Implicit "markdown".                                                                                                                                                                                                                                                                 |
+| External system ID (e.g. Notion page id, Linear ticket id) | **No**                         | No column. Encoding it in path is the only escape hatch.                                                                                                                                                                                                                             |
+| Permissions / ACLs                                         | **No**                         | Same.                                                                                                                                                                                                                                                                                |
+| Cross-source dedup                                         | **No (intra-collection only)** | `content.hash` dedupes identical bodies *within* the index. Two different sources of the same content would dedup at body level, but the doc rows remain distinct. There is no entity-resolution operator.                                                                           |
+| Sync semantics                                             | **Partial**                    | `reindexCollection` re-globs and (a) hashes new content, (b) updates titles / hashes when files change, (c) deactivates rows for missing paths, (d) cleans orphaned content. There is no cross-source reconciliation, no last-write-wins, no versioning. (`src/store.ts:1228-1268`.) |
+| Conflict state                                             | **No**                         | No notion of conflicts because there is no source-of-truth competition; the filesystem is authoritative.                                                                                                                                                                             |
 
 For indexit, this means **QMD's data model loses most of what we'd want
 about a heterogeneous source**. Even if we forced everything into a
@@ -76,15 +75,15 @@ substrate ourselves.
 
 This is where QMD is most clearly out of scope for goal #2.
 
-| Modality | QMD v2.1.0 handling                                                                                                              |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Text (markdown)         | First-class. Smart chunker is markdown-aware, the FTS5 tokeniser is `porter unicode61`, embedding prompts are nomic-style for embeddinggemma or instruct-style for Qwen3-Embedding (`src/llm.ts:38-58`). |
-| Source code (TS/JS/PY/GO/RS) | Chunked at AST boundaries when `--chunk-strategy auto` is used (`src/ast.ts:87-165`); embedded as text. Not separately retrievable, not indexed differently from prose. |
-| HTML                     | **None.** No HTML stripping, no DOM walker. An `*.html` file can be force-indexed by changing the glob, but it would be tokenised as raw HTML.       |
-| PDF                      | **None.** No PDF parser, no OCR. PDFs would be read as binary text by `readFileSync(filepath, "utf-8")` and produce garbage.                          |
-| Image (PNG/JPG/WebP)     | **None.** No CLIP, no SigLip, no captioning, no thumbnail handling. The default glob excludes them; a custom glob would just store binary in `content.doc`. |
-| Audio (WAV/MP3/FLAC)     | **None.** No Whisper / no ASR. Same situation as image.                                                                                              |
-| Video                    | **None.** Not even partial support; there is no frame extractor or audio-track separator.                                                            |
+| Modality                     | QMD v2.1.0 handling                                                                                                                                                                                      |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Text (markdown)              | First-class. Smart chunker is markdown-aware, the FTS5 tokeniser is `porter unicode61`, embedding prompts are nomic-style for embeddinggemma or instruct-style for Qwen3-Embedding (`src/llm.ts:38-58`). |
+| Source code (TS/JS/PY/GO/RS) | Chunked at AST boundaries when `--chunk-strategy auto` is used (`src/ast.ts:87-165`); embedded as text. Not separately retrievable, not indexed differently from prose.                                  |
+| HTML                         | **None.** No HTML stripping, no DOM walker. An `*.html` file can be force-indexed by changing the glob, but it would be tokenised as raw HTML.                                                           |
+| PDF                          | **None.** No PDF parser, no OCR. PDFs would be read as binary text by `readFileSync(filepath, "utf-8")` and produce garbage.                                                                             |
+| Image (PNG/JPG/WebP)         | **None.** No CLIP, no SigLip, no captioning, no thumbnail handling. The default glob excludes them; a custom glob would just store binary in `content.doc`.                                              |
+| Audio (WAV/MP3/FLAC)         | **None.** No Whisper / no ASR. Same situation as image.                                                                                                                                                  |
+| Video                        | **None.** Not even partial support; there is no frame extractor or audio-track separator.                                                                                                                |
 
 Every per-modality §4.3 question therefore answers identically:
 **markdown + tree-sitter-supported code only; image / audio / video are
@@ -161,16 +160,16 @@ Two adoption shapes to size:
 Goal: ship a Sparkle-K-bucket markdown search experience inside indexit
 without doing anything heterogeneous or multimodal.
 
-| Item | Estimate |
-| ---- | -------- |
-| Vendor QMD at v2.1.0; consume as `@tobilu/qmd` or fork. | <1 day |
-| Disable / hide `update_command` shell hook in our wrapper (F-1). | ~1 day |
-| Mirror default models under our HF org / verify by SHA on download (F-6). | ~1–2 days |
-| Add `npm audit` / `osv-scanner` in our CI for QMD's deps (F-5). | ~1 day |
-| Wire stdio-MCP only in our wrapper; if HTTP needed, add token + Origin allow-list (F-3). | ~1–2 days |
-| `chmod 0600` on the SQLite file + cache dir 0700 (F-8). | <1 day |
+| Item                                                                                                | Estimate  |
+| --------------------------------------------------------------------------------------------------- | --------- |
+| Vendor QMD at v2.1.0; consume as `@tobilu/qmd` or fork.                                             | <1 day    |
+| Disable / hide `update_command` shell hook in our wrapper (F-1).                                    | ~1 day    |
+| Mirror default models under our HF org / verify by SHA on download (F-6).                           | ~1–2 days |
+| Add `npm audit` / `osv-scanner` in our CI for QMD's deps (F-5).                                     | ~1 day    |
+| Wire stdio-MCP only in our wrapper; if HTTP needed, add token + Origin allow-list (F-3).            | ~1–2 days |
+| `chmod 0600` on the SQLite file + cache dir 0700 (F-8).                                             | <1 day    |
 | Sidecar Sparkle-K metadata table to record bucket / project / area / etc. (QMD has no such column). | ~3–5 days |
-| Sanity tests + observability hooks. | ~2–3 days |
+| Sanity tests + observability hooks.                                                                 | ~2–3 days |
 
 **Floor: ~1.5 dev-weeks. Ceiling: ~2.5 dev-weeks.**
 
@@ -178,13 +177,13 @@ without doing anything heterogeneous or multimodal.
 
 Goal: heterogeneous sources + multimodal semantic search.
 
-| Item | Estimate |
-| ---- | -------- |
+| Item                                                                                                                                                                                        | Estimate    |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
 | Connector framework (Notion / Slack / GitHub / Drive / IMAP / browser history) — QMD has none, so we'd write a parallel ETL that produces `.md` for QMD to consume. Each connector ~1 week. | ~6–10 weeks |
-| Per-source identity layer: external IDs, ACLs, MIME, modality flag — sidecar table in the same SQLite file, plus all the indexer/search wrapping. | ~2–3 weeks |
-| Image / audio / video pipelines: model selection, embedder, retrieval — not supported in QMD at all; we'd be running a separate engine and joining at query time. | ~4–8 weeks |
-| Reconcile multi-engine results (one for markdown via QMD, one for media) into a single ranked answer. | ~1–2 weeks |
-| Maintenance overhead of bridging QMD's evolving v2.x schema with our sidecar tables. | ongoing |
+| Per-source identity layer: external IDs, ACLs, MIME, modality flag — sidecar table in the same SQLite file, plus all the indexer/search wrapping.                                           | ~2–3 weeks  |
+| Image / audio / video pipelines: model selection, embedder, retrieval — not supported in QMD at all; we'd be running a separate engine and joining at query time.                           | ~4–8 weeks  |
+| Reconcile multi-engine results (one for markdown via QMD, one for media) into a single ranked answer.                                                                                       | ~1–2 weeks  |
+| Maintenance overhead of bridging QMD's evolving v2.x schema with our sidecar tables.                                                                                                        | ongoing     |
 
 **Floor: ~3 dev-months. Ceiling: ~6 dev-months.** At that point we are
 mostly using QMD's BM25+vec+rerank text plumbing — which is replaceable
@@ -193,7 +192,6 @@ by other off-the-shelf libraries with comparable cost.
 ## C8. Exit cost
 
 **Low.**
-
 - MIT license; we can fork freely.
 - Engine state is one SQLite file (`~/.cache/qmd/index.sqlite`) with a
   small, documented schema (§A7 of [`architecture.md`](architecture.md)).
@@ -212,7 +210,6 @@ by other off-the-shelf libraries with comparable cost.
 decide to ship a Markdown-RAG sub-product.
 
 Reasoning:
-
 - QMD is **excellent at what it does** — markdown hybrid search with
   on-device LLM rerank, smart chunking, and an MCP frontend. The
   engineering quality is high (clean SQL hygiene, parameterised

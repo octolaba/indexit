@@ -10,8 +10,6 @@ commit. Severities follow the rough scale **Critical / High / Medium /
 Low / Info**, weighted by exploitability **assuming the daemon is
 reachable** — which is the project's stated intent.
 
----
-
 ## 1. Summary
 
 * `v0.0.1` is **0.0.1-alpha.1**, "Development Status :: 3 - Alpha"
@@ -40,37 +38,32 @@ reachable** — which is the project's stated intent.
 The findings below are listed in **descending severity**. Each has file
 + line cites and a recommended fix.
 
----
-
 ## 2. Risk register
 
-| # | Severity | Title |
-| --- | --- | --- |
-| 3.1 | **Critical** | Daemon HTTP API is unauthenticated despite client-side token plumbing |
-| 3.2 | **High** | `POST /v1/.../execute` with `native: true` runs arbitrary shell on the daemon host |
-| 3.3 | **High** | `POST /v1/shutdown` is unauthenticated → DoS |
-| 3.4 | **High** | Path traversal in `DiskResource.load_state` via crafted snapshot |
-| 3.5 | **High** | SSH host-key verification disabled by default (`known_hosts=None`) |
-| 3.6 | **Medium** | Snapshot loader imports an attacker-named module via `importlib.import_module` |
-| 3.7 | **Medium** | `load_backend_class("./script.py:Cls")` → arbitrary Python via file-path spec |
-| 3.8 | **Medium** | Snapshot endpoint exfiltrates Disk/RAM mount content |
-| 3.9 | **Medium** | `subprocess.run(["fusermount", "-u", mountpoint])` accepts caller-controlled path |
-| 3.10 | **Low** | SSH `identity_file` path is not redacted in snapshots |
-| 3.11 | **Low** | `daemon.pid` file written without locking; concurrent daemons |
-| 3.12 | **Low** | `daemon.log` grows unbounded (no rotation) |
-| 3.13 | **Low** | Observer JSONL captures verbatim stdin / stdout / commands |
-| 3.14 | **Low** | `GitHubResource.__init__` does synchronous network I/O on the daemon's request thread |
-| 3.15 | **Info** | Tar reader and `is_safe_blob_path` correctly defend the tar layer |
-| 3.16 | **Info** | Disk-resource runtime ops correctly enforce `relative_to(root)` |
-
----
+| #    | Severity     | Title                                                                                 |
+| ---- | ------------ | ------------------------------------------------------------------------------------- |
+| 3.1  | **Critical** | Daemon HTTP API is unauthenticated despite client-side token plumbing                 |
+| 3.2  | **High**     | `POST /v1/.../execute` with `native: true` runs arbitrary shell on the daemon host    |
+| 3.3  | **High**     | `POST /v1/shutdown` is unauthenticated → DoS                                          |
+| 3.4  | **High**     | Path traversal in `DiskResource.load_state` via crafted snapshot                      |
+| 3.5  | **High**     | SSH host-key verification disabled by default (`known_hosts=None`)                    |
+| 3.6  | **Medium**   | Snapshot loader imports an attacker-named module via `importlib.import_module`        |
+| 3.7  | **Medium**   | `load_backend_class("./script.py:Cls")` → arbitrary Python via file-path spec         |
+| 3.8  | **Medium**   | Snapshot endpoint exfiltrates Disk/RAM mount content                                  |
+| 3.9  | **Medium**   | `subprocess.run(["fusermount", "-u", mountpoint])` accepts caller-controlled path     |
+| 3.10 | **Low**      | SSH `identity_file` path is not redacted in snapshots                                 |
+| 3.11 | **Low**      | `daemon.pid` file written without locking; concurrent daemons                         |
+| 3.12 | **Low**      | `daemon.log` grows unbounded (no rotation)                                            |
+| 3.13 | **Low**      | Observer JSONL captures verbatim stdin / stdout / commands                            |
+| 3.14 | **Low**      | `GitHubResource.__init__` does synchronous network I/O on the daemon's request thread |
+| 3.15 | **Info**     | Tar reader and `is_safe_blob_path` correctly defend the tar layer                     |
+| 3.16 | **Info**     | Disk-resource runtime ops correctly enforce `relative_to(root)`                       |
 
 ## 3. Findings (detail)
 
 ### 3.1. **Critical** — Daemon has no authentication
 
 **Where.**
-
 * `research/mirage/python/mirage/cli/server_factory.py:15-22`
 * `research/mirage/python/mirage/server/app.py:92-130`
 * `research/mirage/python/mirage/cli/client.py:48-127`
@@ -120,7 +113,6 @@ inside `python/mirage/server/` returns **zero hits**. The headers a
 client sends are simply discarded.
 
 **Impact.** Any HTTP client that can reach the bind address can:
-
 * Create or delete arbitrary workspaces and mount any registered
   resource with attacker-supplied credentials
   (`POST /v1/workspaces`, `DELETE /v1/workspaces/{id}` —
@@ -132,7 +124,6 @@ client sends are simply discarded.
 * Trip `POST /v1/shutdown` to stop the daemon (§3.3).
 
 **Mitigations in v0.0.1.** Two only:
-
 1. The CLI auto-spawn forces `--host 127.0.0.1`
    (`cli/client.py:106-111`). On a single-user box this isolates the
    daemon to the local UID via TCP loopback (still readable by any
@@ -148,8 +139,6 @@ FastAPI dependency that compares against the token, and apply it to all
 routers except `/v1/health`. Treat the token as a shared secret only —
 do not lean on it for multi-tenant separation; it is currently impossible
 in v0.0.1 (no per-token authorization scope).
-
----
 
 ### 3.2. **High** — Native exec is raw `subprocess_shell`
 
@@ -191,8 +180,6 @@ permission token / scope. (c) Document loudly — the README pitches
 "familiar bash tools" as virtual; the native path is the literal real
 shell.
 
----
-
 ### 3.3. **High** — `POST /v1/shutdown` is unauthenticated
 
 **Where.** `research/mirage/python/mirage/server/routers/health.py:41-50`.
@@ -208,8 +195,6 @@ async def shutdown(request: Request) -> ShutdownResponse:
 disabled, all in-RAM workspaces are lost (history, RAM mounts, jobs).
 
 **Fix.** Same as §3.1 — bind the auth dependency to this route.
-
----
 
 ### 3.4. **High** — Path traversal in `DiskResource.load_state`
 
@@ -270,8 +255,6 @@ daemon UID can reach.
 key whose resolved path is not `relative_to(self.root)`. Identical fix
 applies to the TS sibling.
 
----
-
 ### 3.5. **High** — SSH host-key verification disabled by default
 
 **Where.** `research/mirage/python/mirage/core/ssh/_client.py:53-62`.
@@ -300,8 +283,6 @@ real server, and silently rewrite SFTP traffic.
 **Fix.** Default to `os.path.expanduser("~/.ssh/known_hosts")` when
 `config.known_hosts is None`. Refuse connection if neither the user's
 file nor an explicit value is provided. Mirror the fix in TS.
-
----
 
 ### 3.6. **Medium** — Snapshot loader imports an attacker-named module
 
@@ -334,8 +315,6 @@ fingerprinting / stack-disclosure primitive even in benign cases.
 **Fix.** Validate `mod_name` against the project's `REGISTRY`
 (`resource/registry.py:28-107`). Reject anything outside it.
 
----
-
 ### 3.7. **Medium** — `load_backend_class("./script.py:Class")` is `exec_module`
 
 **Where.** `research/mirage/python/mirage/resource/loader.py:34-49`.
@@ -363,12 +342,9 @@ unauthenticated `POST /v1/workspaces` (§3.1) that already accepts a
 entirely, or gate it behind a feature flag that is off when the
 HTTP API is enabled. Document the trade-off.
 
----
-
 ### 3.8. **Medium** — Snapshot endpoint exfiltrates Disk/RAM content
 
 **Where.**
-
 * `research/mirage/python/mirage/server/routers/workspaces.py:99-119`
 * `research/mirage/python/mirage/resource/disk/disk.py:90-101`
 * `research/mirage/python/mirage/workspace/snapshot/manifest.py:85-101`
@@ -397,8 +373,6 @@ objects, GDrive docs) is in the snapshot too
 data" flag (default off). For Disk mounts, also support
 `include_files=False` so a snapshot can be a *configuration-only*
 artifact.
-
----
 
 ### 3.9. **Medium** — `fusermount -u <mountpoint>` accepts caller path
 
@@ -433,8 +407,6 @@ blast radius; documented as a hygiene improvement.
 `_fuse.mountpoint` and refuse if they differ; or validate that
 `os.path.realpath(mountpoint)` is inside an allowlist.
 
----
-
 ### 3.10. **Low** — SSH `identity_file` path leaks in snapshot
 
 **Where.** `research/mirage/python/mirage/resource/ssh/ssh.py:108-119`.
@@ -457,8 +429,6 @@ loader doesn't even ask for a fresh value — it just re-uses it.
 **Fix.** Mark `identity_file` as redacted, set `needs_override=True`
 when present.
 
----
-
 ### 3.11. **Low** — PID file written without locking
 
 **Where.** `research/mirage/python/mirage/server/app.py:33-47`.
@@ -477,8 +447,6 @@ each other; `mirage daemon stop` may then SIGTERM the wrong PID.
 `/proc/<pid>` (or `os.kill(pid, 0)`) and either reject or take over
 deliberately.
 
----
-
 ### 3.12. **Low** — `daemon.log` grows unbounded
 
 **Where.** `research/mirage/python/mirage/cli/client.py:117-127`.
@@ -494,8 +462,6 @@ No rotation, no truncate. A long-running daemon eventually fills disk.
 
 **Fix.** Use a rotating handler or rely on systemd journald.
 
----
-
 ### 3.13. **Low** — Observer JSONL captures verbatim stdin/stdout/commands
 
 **Where.** `research/mirage/python/mirage/observe/observer.py:54-103`,
@@ -506,7 +472,6 @@ to `<observe_prefix>/<UTC date>/<session>.jsonl`. The default observer
 resource is RAM (`research/mirage/python/mirage/workspace/workspace.py:137-141`)
 but the docs / DX explicitly suggest persisting it via a Disk-backed
 resource for replay. The records include:
-
 * `command` (full shell text)
 * `stdin` (raw bytes)
 * `stdout` (raw bytes; serialized via `materialize_stdout()`)
@@ -520,8 +485,6 @@ exfiltratable.
 **Fix.** Either don't record `stdout`/`stderr` by default, or scrub
 common secret patterns before writing. At minimum, document the risk in
 `SECURITY.md`.
-
----
 
 ### 3.14. **Low** — `GitHubResource.__init__` does sync network I/O
 
@@ -545,8 +508,6 @@ API or rate limit blocks the thread.
 **Fix.** Move the bootstrap into a lazy first-use call, or run it in
 a worker thread.
 
----
-
 ### 3.15. **Info** — Tar reader and blob-path filter are sound
 
 `workspace/snapshot/tar_io.py:58-93` reads via `getmember` +
@@ -558,8 +519,6 @@ extraction is not exercised because `_make_reader` only calls
 tar layer.** The traversal in §3.4 is *higher up* — in the manifest
 keys — and is fixable in `DiskResource.load_state` without touching
 the tar layer.
-
----
 
 ### 3.16. **Info** — Disk-resource runtime ops correctly contain paths
 
@@ -581,21 +540,19 @@ Verified across `read.py`, `write.py`, `unlink.py`, `mkdir.py`,
 also fails the `relative_to` check because `Path.resolve()` follows
 symlinks. **Runtime disk path-traversal: defended.**
 
----
-
 ## 4. Reviewed-and-no-issues categories
 
 To meet the issue's acceptance criterion ("at least one category is
 reported as either a concrete code-level finding or an explicit
 'reviewed, no issues found'"):
 
-| Category | Verdict at v0.0.1 |
-| --- | --- |
-| Tar `extractall` traversal (CVE-2007-4559) | **Reviewed, no issues** — tar reader does not use `extractall`; per-blob path validated (§3.15) |
-| Disk-resource runtime path traversal | **Reviewed, no issues** — `_resolve` enforces `relative_to(root)` (§3.16) |
-| YAML deserialization | **Reviewed, no issues** — `yaml.safe_load` is used consistently (`config.py:228`, `cli/workspace.py:32`, `server/persist.py:49`) |
-| Pickle / `eval` / `exec` of user data | **No findings** — no `pickle`, `marshal`, `eval`, `exec` of network-sourced data observed in `python/mirage/`; `exec_module` is only called from the `load_backend_class` script-path branch (§3.7) |
-| Public CVE / OSV / Dependabot echo | **Out of scope by design.** Project is alpha; the known surface is everything documented above. No upstream advisories on `mirage-ai 0.0.1` at the pin |
+| Category                                   | Verdict at v0.0.1                                                                                                                                                                                   |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tar `extractall` traversal (CVE-2007-4559) | **Reviewed, no issues** — tar reader does not use `extractall`; per-blob path validated (§3.15)                                                                                                     |
+| Disk-resource runtime path traversal       | **Reviewed, no issues** — `_resolve` enforces `relative_to(root)` (§3.16)                                                                                                                           |
+| YAML deserialization                       | **Reviewed, no issues** — `yaml.safe_load` is used consistently (`config.py:228`, `cli/workspace.py:32`, `server/persist.py:49`)                                                                    |
+| Pickle / `eval` / `exec` of user data      | **No findings** — no `pickle`, `marshal`, `eval`, `exec` of network-sourced data observed in `python/mirage/`; `exec_module` is only called from the `load_backend_class` script-path branch (§3.7) |
+| Public CVE / OSV / Dependabot echo         | **Out of scope by design.** Project is alpha; the known surface is everything documented above. No upstream advisories on `mirage-ai 0.0.1` at the pin                                              |
 
 ## 5. Authn / authz model (answer to §4.2)
 

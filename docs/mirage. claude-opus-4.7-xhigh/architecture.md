@@ -7,8 +7,6 @@
 All file references in this document are relative to `research/mirage/`
 at the pinned commit.
 
----
-
 ## 1. What problem does Mirage solve?
 
 Mirage is a **unified virtual filesystem (VFS) for AI agents**. It mounts
@@ -40,8 +38,6 @@ complete one at `v0.0.1` (29 resources, full daemon, FUSE bridge); this
 analysis focuses on it and notes TypeScript parity points where they
 matter (`research/mirage/AGENTS.md:6-13`,
 `research/mirage/typescript/pnpm-workspace.yaml`).
-
----
 
 ## 2. C4 — System Context
 
@@ -78,8 +74,6 @@ straight into `asyncio.create_subprocess_shell` on the daemon host
 the agent's prompt-injection blast radius the same as the host's shell
 blast radius. See `security.md` finding §3.1.
 
----
-
 ## 3. C4 — Containers
 
 ```mermaid
@@ -115,13 +109,13 @@ C4Container
 
 ### 3.1. Deployable units
 
-| Unit | Where | Lifecycle |
-| --- | --- | --- |
-| `mirage-ai` Python library | imported in-process | per-app |
-| `mirage` CLI | `python -m mirage.cli.main` (`research/mirage/python/pyproject.toml:62-63`) | per-invocation; auto-spawns daemon |
-| Mirage daemon | `uvicorn mirage.cli.server_factory:app --host 127.0.0.1 --port 8765` (`research/mirage/python/mirage/cli/client.py:98-127`) | long-lived, idle-timeout |
-| FUSE mount | `mfusepy.FUSE(MirageFS, mountpoint, nothreads=True, foreground=True, direct_io=True)` (`research/mirage/python/mirage/fuse/mount.py:27-44`) | per-Workspace |
-| TS sibling daemon | `@struktoai/mirage-server` (`research/mirage/typescript/packages/server/`) | per-invocation |
+| Unit                       | Where                                                                                                                                       | Lifecycle                          |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `mirage-ai` Python library | imported in-process                                                                                                                         | per-app                            |
+| `mirage` CLI               | `python -m mirage.cli.main` (`research/mirage/python/pyproject.toml:62-63`)                                                                 | per-invocation; auto-spawns daemon |
+| Mirage daemon              | `uvicorn mirage.cli.server_factory:app --host 127.0.0.1 --port 8765` (`research/mirage/python/mirage/cli/client.py:98-127`)                 | long-lived, idle-timeout           |
+| FUSE mount                 | `mfusepy.FUSE(MirageFS, mountpoint, nothreads=True, foreground=True, direct_io=True)` (`research/mirage/python/mirage/fuse/mount.py:27-44`) | per-Workspace                      |
+| TS sibling daemon          | `@struktoai/mirage-server` (`research/mirage/typescript/packages/server/`)                                                                  | per-invocation                     |
 
 The daemon is **not multi-tenant**: it is intended as a single-user
 helper that exposes a localhost API to the user's CLI, agents, and
@@ -131,8 +125,6 @@ the lifespan ends, every active workspace is closed
 `MIRAGE_PERSIST_DIR` snapshots all workspaces to tar on shutdown and
 rehydrates them on startup
 (`research/mirage/python/mirage/server/persist.py:70-146`).
-
----
 
 ## 4. C4 — Components (Python `Workspace`)
 
@@ -237,8 +229,6 @@ C4Component
   surface and skill renderer only*; no transport layer is wired to it.
   The HTTP daemon (`/v1/...`) is a separate, simpler API.
 
----
-
 ## 5. The "indexing" pipeline (or rather: the read pipeline)
 
 There is no semantic indexing pipeline in Mirage. The closest analogue
@@ -284,7 +274,6 @@ sequenceDiagram
 ```
 
 Key invariants:
-
 * Cache is **per-path keyed**. There is no fingerprint dedup.
   Aliases (e.g., `/s3/x.txt` and a copy at `/disk/x.txt`) cache twice.
 * `ConsistencyPolicy.ALWAYS` re-stats the upstream every dispatch
@@ -299,17 +288,15 @@ Key invariants:
   (`research/mirage/python/mirage/workspace/workspace.py:489-499`,
   `research/mirage/python/mirage/workspace/native.py:26`).
 
----
-
 ## 6. Storage backends and indices
 
-| Layer | Backend | Purpose |
-| --- | --- | --- |
-| File cache | `RAMFileCacheStore` (default, 512 MB), `RedisFileCacheStore` | Per-path object bytes |
-| Index cache | `RAMIndexCacheStore` (default, 600 s TTL), `RedisIndexCacheStore` | Directory listings, fingerprints, freshness |
-| History | `ExecutionHistory` (RAM ring buffer, 100 entries default; optional `history_path`) | Per-session command+stdout records |
-| Observer | configurable `BaseResource` (default RAM, can be Disk) | JSONL log of ops + commands |
-| Snapshot | tar (optionally `gz`/`bz2`/`xz`) on disk OR in-memory `BytesIO` | Workspace state across daemon restarts |
+| Layer       | Backend                                                                            | Purpose                                     |
+| ----------- | ---------------------------------------------------------------------------------- | ------------------------------------------- |
+| File cache  | `RAMFileCacheStore` (default, 512 MB), `RedisFileCacheStore`                       | Per-path object bytes                       |
+| Index cache | `RAMIndexCacheStore` (default, 600 s TTL), `RedisIndexCacheStore`                  | Directory listings, fingerprints, freshness |
+| History     | `ExecutionHistory` (RAM ring buffer, 100 entries default; optional `history_path`) | Per-session command+stdout records          |
+| Observer    | configurable `BaseResource` (default RAM, can be Disk)                             | JSONL log of ops + commands                 |
+| Snapshot    | tar (optionally `gz`/`bz2`/`xz`) on disk OR in-memory `BytesIO`                    | Workspace state across daemon restarts      |
 
 There is **no vector store, no full-text index, no inverted index**
 anywhere. Search through a mount goes through the **upstream's own
@@ -320,27 +307,23 @@ through `grep`/`rg`/`jq` running in the executor's thread
 `research/mirage/python/mirage/commands/builtin/grep_helper.py`,
 `…/rg_helper.py`).
 
----
-
 ## 7. Extension points and plugin surfaces
 
-| Surface | Stability | How to extend |
-| --- | --- | --- |
+| Surface                                 | Stability                 | How to extend                                                                                                                                                                                                                                                    |
+| --------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Resource` registry — add a new backend | **Public, stable enough** | Subclass `BaseResource` + `Accessor` + per-op functions; register in `REGISTRY` (`research/mirage/python/mirage/resource/registry.py:28-107`) or pass via `load_backend_class("./script.py:MyClass")` (`research/mirage/python/mirage/resource/loader.py:34-49`) |
-| Custom commands | **Public** | `@command("verb", resources=[...])` in `mirage.commands.registry`; loaded per-resource (`research/mirage/python/mirage/commands/registry.py`) |
-| Cache stores | **Public** | Provide a `CacheConfig` / store class with the same interface as `RAMFileCacheStore` (`research/mirage/python/mirage/cache/file/`) |
-| Index stores | **Public** | Same shape as `RAMIndexCacheStore` (`research/mirage/python/mirage/cache/index/`) |
-| Observer resource | **Public** | Pass any `BaseResource` to `Workspace(observe=...)` |
-| Agent framework adapters | **Public** | `mirage.agents.openai_agents.MirageSandboxClient` and TS `@struktoai/mirage-agents` cover OpenAI Agents SDK, Vercel AI SDK, LangChain, Pydantic AI, CAMEL, OpenHands, DeepAgents (extras list `pyproject.toml:108-129`) |
-| Daemon HTTP API | **Public, but unauth** | `mirage.server.routers.{workspaces,sessions,execute,jobs,health}` — see `security.md` §3.1, §3.3 |
-| VFP capability declarations | **Internal-leaning** | `mirage.vfp.skill.render(declaration)` produces an LLM system-prompt blurb; the matching wire protocol is not implemented |
-| FUSE filesystem | **Public, OS-dependent** | macFUSE (macOS) / libfuse (Linux); `Workspace(fuse=True)` |
-| Backwards compatibility | **No commitment** | `research/mirage/AGENTS.md:33-36` ("No need to consider backward compatibility for the code") |
+| Custom commands                         | **Public**                | `@command("verb", resources=[...])` in `mirage.commands.registry`; loaded per-resource (`research/mirage/python/mirage/commands/registry.py`)                                                                                                                    |
+| Cache stores                            | **Public**                | Provide a `CacheConfig` / store class with the same interface as `RAMFileCacheStore` (`research/mirage/python/mirage/cache/file/`)                                                                                                                               |
+| Index stores                            | **Public**                | Same shape as `RAMIndexCacheStore` (`research/mirage/python/mirage/cache/index/`)                                                                                                                                                                                |
+| Observer resource                       | **Public**                | Pass any `BaseResource` to `Workspace(observe=...)`                                                                                                                                                                                                              |
+| Agent framework adapters                | **Public**                | `mirage.agents.openai_agents.MirageSandboxClient` and TS `@struktoai/mirage-agents` cover OpenAI Agents SDK, Vercel AI SDK, LangChain, Pydantic AI, CAMEL, OpenHands, DeepAgents (extras list `pyproject.toml:108-129`)                                          |
+| Daemon HTTP API                         | **Public, but unauth**    | `mirage.server.routers.{workspaces,sessions,execute,jobs,health}` — see `security.md` §3.1, §3.3                                                                                                                                                                 |
+| VFP capability declarations             | **Internal-leaning**      | `mirage.vfp.skill.render(declaration)` produces an LLM system-prompt blurb; the matching wire protocol is not implemented                                                                                                                                        |
+| FUSE filesystem                         | **Public, OS-dependent**  | macFUSE (macOS) / libfuse (Linux); `Workspace(fuse=True)`                                                                                                                                                                                                        |
+| Backwards compatibility                 | **No commitment**         | `research/mirage/AGENTS.md:33-36` ("No need to consider backward compatibility for the code")                                                                                                                                                                    |
 
 The largest amount of public surface is the *resource* shape. Most other
 extension points are smaller — caches, commands, agents.
-
----
 
 ## 8. Runtime model
 
@@ -371,34 +354,32 @@ extension points are smaller — caches, commands, agents.
   `research/mirage/python/mirage/cli/settings.py:42-74`). At that point
   the unauth posture (security §3.1) becomes externally exploitable.
 
----
-
 ## 9. Stack / dependencies
 
-| Layer | Choice |
-| --- | --- |
-| Language | Python ≥ 3.12 (stdlib only on the type/path level) |
-| HTTP server | FastAPI + uvicorn |
-| CLI | Typer (`mirage.cli.main:app`) |
-| Shell parser | tree-sitter + tree-sitter-bash |
-| FS bridge | mfusepy (FUSE) |
-| Async file I/O | aiofiles |
-| HTTP client | httpx, aiohttp |
-| Validation | pydantic v2 |
-| Serialization | orjson, pyyaml, tomllib |
-| Subprocess | `asyncio.create_subprocess_shell` (native exec) |
-| Object stores | aioboto3 (S3, R2, GCS, OCI) |
-| Google Workspace | google-* SDKs (declared as optional, installed via extras) |
-| SSH | asyncssh + paramiko (extras) |
-| Postgres | asyncpg (extras) |
-| MongoDB | motor (extras) |
-| Redis | redis[hiredis] (extras) |
-| Email | aioimaplib + aiosmtplib (extras) |
-| PDF / images | pypdfium2 + pillow |
-| Parquet / Arrow | pandas + pyarrow (extras) |
-| HDF5 | h5py + tables (extras) |
-| Audio | av + sherpa-onnx + tinytag (extras) |
-| Agent SDKs | openai, openai-agents, anthropic, pydantic-ai, deepagents, openhands-sdk, camel-ai (extras) |
+| Layer            | Choice                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------- |
+| Language         | Python ≥ 3.12 (stdlib only on the type/path level)                                          |
+| HTTP server      | FastAPI + uvicorn                                                                           |
+| CLI              | Typer (`mirage.cli.main:app`)                                                               |
+| Shell parser     | tree-sitter + tree-sitter-bash                                                              |
+| FS bridge        | mfusepy (FUSE)                                                                              |
+| Async file I/O   | aiofiles                                                                                    |
+| HTTP client      | httpx, aiohttp                                                                              |
+| Validation       | pydantic v2                                                                                 |
+| Serialization    | orjson, pyyaml, tomllib                                                                     |
+| Subprocess       | `asyncio.create_subprocess_shell` (native exec)                                             |
+| Object stores    | aioboto3 (S3, R2, GCS, OCI)                                                                 |
+| Google Workspace | google-* SDKs (declared as optional, installed via extras)                                  |
+| SSH              | asyncssh + paramiko (extras)                                                                |
+| Postgres         | asyncpg (extras)                                                                            |
+| MongoDB          | motor (extras)                                                                              |
+| Redis            | redis[hiredis] (extras)                                                                     |
+| Email            | aioimaplib + aiosmtplib (extras)                                                            |
+| PDF / images     | pypdfium2 + pillow                                                                          |
+| Parquet / Arrow  | pandas + pyarrow (extras)                                                                   |
+| HDF5             | h5py + tables (extras)                                                                      |
+| Audio            | av + sherpa-onnx + tinytag (extras)                                                         |
+| Agent SDKs       | openai, openai-agents, anthropic, pydantic-ai, deepagents, openhands-sdk, camel-ai (extras) |
 
 (`research/mirage/python/pyproject.toml:36-129`)
 
@@ -407,8 +388,6 @@ but the **default install is small**: only the dependencies listed
 under `[project.dependencies]` come in unconditionally
 (`research/mirage/python/pyproject.toml:36-54`). Each backend is opted
 into via extras, which keeps the import-time cost bounded.
-
----
 
 ## 10. C4 — runtime view of HTTP request → execute
 
@@ -447,16 +426,12 @@ The lack of authentication is not an oversight in this diagram — it
 reflects the actual code (see security §3.1). The *client* knows about
 auth tokens; the *server* never reads them.
 
----
-
 ## 11. Notes for the diagrams
 
 The mermaid sources live inline in this file. Rendered SVG is not
 extracted to `diagrams/` because the Mermaid sources are the canonical
 form and stay diffable. Should anyone need raster output, run the
 sources through `mmdc` (`@mermaid-js/mermaid-cli`).
-
----
 
 ## 12. Cross-references
 

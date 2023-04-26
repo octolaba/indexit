@@ -15,7 +15,6 @@ CocoIndex is a developer-side indexing framework. It does not implement an appli
 CocoIndex core has no built-in authentication or authorization layer. It is an embedded SDK/CLI: user apps import `cocoindex`, load credentials through app code/context, and connect to external sources/targets. The CLI loads user apps by importing a file or module (`research/cocoindex/python/cocoindex/user_app_loader.py:49-84` @ `4432311228e4859201b457d3b6d978471692d0b1`) and has commands that inspect or update local persisted app state (`research/cocoindex/python/cocoindex/cli.py:519-607` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 
 Connector authentication is delegated:
-
 - Google Drive uses a service account credential file and read-only Drive scope (`research/cocoindex/python/cocoindex/connectors/google_drive/_source.py:63-73`, `research/cocoindex/python/cocoindex/connectors/google_drive/_source.py:146-159` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 - S3 and OCI connectors receive already-created SDK clients (`research/cocoindex/python/cocoindex/connectors/amazon_s3/_source.py:89-117`, `research/cocoindex/python/cocoindex/connectors/oci_object_storage/_source.py:151-189` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 - Postgres source/target code receives asyncpg pools rather than managing credentials itself (`research/cocoindex/python/cocoindex/connectors/postgres/_source.py:74-87` @ `4432311228e4859201b457d3b6d978471692d0b1`).
@@ -23,14 +22,12 @@ Connector authentication is delegated:
 ## Trust boundaries and input validation
 
 Primary trust boundaries:
-
 - User app import boundary: loading an app executes arbitrary Python module code by design (`research/cocoindex/python/cocoindex/user_app_loader.py:75-84` @ `4432311228e4859201b457d3b6d978471692d0b1`). Treat app code as fully trusted.
 - Source content boundary: files, object-store objects, DB rows, and Kafka messages become user transform inputs. `FileLike.read()` can cache entire file contents in memory (`research/cocoindex/python/cocoindex/resources/file.py:122-141` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 - Connector configuration boundary: table names, schema names, column names, vector definitions, and model names are often interpolated into DDL or used to load model code.
 - Target write boundary: target handlers apply batched upserts/deletes to external systems. Postgres row values are parameter-bound (`research/cocoindex/python/cocoindex/connectors/postgres/_target.py:675-687`, `research/cocoindex/python/cocoindex/connectors/postgres/_target.py:717-732` @ `4432311228e4859201b457d3b6d978471692d0b1`), and SQLite row values use bind parameters (`research/cocoindex/python/cocoindex/connectors/sqlite/_target.py:486-522`, `research/cocoindex/python/cocoindex/connectors/sqlite/_target.py:524-537` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 
 Positive validation examples:
-
 - Neo4j Cypher validates identifiers against `^[a-zA-Z_][a-zA-Z0-9_]*$` before backtick quoting and parameter-binds values (`research/cocoindex/python/cocoindex/connectors/neo4j/_cypher.py:41-59`, `research/cocoindex/python/cocoindex/connectors/neo4j/_cypher.py:90-117` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 - Doris connector validates identifiers before DDL construction (`research/cocoindex/python/cocoindex/connectors/doris/_target.py:679-680`, `research/cocoindex/python/cocoindex/connectors/doris/_target.py:740-805` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 - File path matching uses a Rust-backed pattern matcher and rejects invalid glob patterns through constructor errors (`research/cocoindex/python/cocoindex/resources/file.py:227-259` @ `4432311228e4859201b457d3b6d978471692d0b1`).
@@ -90,13 +87,11 @@ The code logs operational errors and status, including component build errors (`
 ## Supply-chain posture
 
 Strengths:
-
 - Rust dependencies are locked in `Cargo.lock`, and Python dependency resolution is captured in `uv.lock`.
 - Release workflow builds wheels across major platforms, tests wheel imports, generates third-party notices, generates artifact attestations, and publishes through a tagged release path (`research/cocoindex/.github/workflows/release.yml:43-175`, `research/cocoindex/.github/workflows/release.yml:203-238` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 - CI runs on PRs/pushes for Python/Rust/workflow changes and delegates to the build-test workflow (`research/cocoindex/.github/workflows/CI.yml:1-28` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 
 Weaknesses:
-
 - Dependabot is configured only for GitHub Actions, not Python or Cargo dependency updates (`research/cocoindex/.github/dependabot.yml:1-12` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 - Some optional integrations intentionally load remote/model code. `SentenceTransformerEmbedder` accepts `trust_remote_code` and passes it to `SentenceTransformer` (`research/cocoindex/python/cocoindex/ops/sentence_transformers.py:52-91` @ `4432311228e4859201b457d3b6d978471692d0b1`). Downstream must default this to false and review model sources before enabling it.
 
@@ -105,7 +100,6 @@ Weaknesses:
 Local git metadata at the pinned submodule shows high activity: 270 commits in the 90 days before 2026-05-06, with the top recent author contributing 189 commits in that window. Tags around the pinned version were frequent: `v1.0.0` on 2026-04-21, `v1.0.1` and `v1.0.2` on 2026-04-28, and `v1.0.3` on 2026-05-04. GitHub's releases page lists `v1.0.3` as released on May 5, 2026, commit `4432311`, with a verified GitHub signature (<https://github.com/cocoindex-io/cocoindex/releases>).
 
 Security response evidence:
-
 - `.github/SECURITY.md` provides a private email and asks reporters not to use public issues (`research/cocoindex/.github/SECURITY.md:3-22` @ `4432311228e4859201b457d3b6d978471692d0b1`).
 - GitHub security overview lists GHSA-59g6-v3vg-f7wc / CVE-2026-28438, a moderate Doris target connector identifier validation issue, published 2026-02-28 (<https://github.com/cocoindex-io/cocoindex/security>; <https://advisories.gitlab.com/pypi/cocoindex/CVE-2026-28438/>).
 - The project blog says it joined GitHub Secure Open Source Fund and added CodeQL, secret scanning, dependency review, OpenSSF Scorecard work, SBOM direction, and a vulnerability response process (<https://cocoindex.io/blogs/cocoindex-joins-security-github-secure-open-source-fund/>).
@@ -119,7 +113,6 @@ The public advisory I found is the Doris table-name validation issue. In v1.0.3,
 Recommendation: **adopt-with-changes**.
 
 Required before product adoption:
-
 - Harden localfs source against symlink root escape.
 - Add strict identifier validation/escaping wrappers around Postgres and SQLite connector configuration.
 - Run each tenant/user in separate `db_path`, process, and target credentials.

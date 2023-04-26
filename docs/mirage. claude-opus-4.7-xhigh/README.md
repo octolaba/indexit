@@ -2,16 +2,16 @@
 
 ## Run metadata
 
-| Field | Value |
-| --- | --- |
-| Subject | [strukto-ai/mirage](https://github.com/strukto-ai/mirage) |
-| Pinned tag | `v0.0.1` |
-| Pinned commit | `8b99fb9247ecb40725d4718bac58e3bb230aad34` |
-| Submodule | `research/mirage/` |
-| Reviewing agent | Claude Opus 4.7 (1M context) |
-| Reasoning effort | xhigh |
-| Agent slug | `claude-opus-4.7-xhigh` |
-| Workflow | `CLAUDE.md` / `AGENTS.md` §3–§5 |
+| Field            | Value                                                     |
+| ---------------- | --------------------------------------------------------- |
+| Subject          | [strukto-ai/mirage](https://github.com/strukto-ai/mirage) |
+| Pinned tag       | `v0.0.1`                                                  |
+| Pinned commit    | `8b99fb9247ecb40725d4718bac58e3bb230aad34`                |
+| Submodule        | `research/mirage/`                                        |
+| Reviewing agent  | Claude Opus 4.7 (1M context)                              |
+| Reasoning effort | xhigh                                                     |
+| Agent slug       | `claude-opus-4.7-xhigh`                                   |
+| Workflow         | `CLAUDE.md` / `AGENTS.md` §3–§5                           |
 
 ## Reports
 
@@ -40,13 +40,13 @@ on top of, not the indexer itself.
 
 ## Verdict matrix
 
-| Dimension | Verdict | Notes |
-| --- | --- | --- |
-| **Sparkle fit** | **Neutral** | Cleanly serves Stream + Resources backends as mounts; does not classify, dedup, or surface upstream ACLs. The bucket distinctions S/P/A/R/K/L/E remain a problem for the indexer above Mirage |
-| **Multimodal fit** | **Poor** (text/structured only) | No native multimodal embeddings. Audio is handled via offline ASR (sherpa-onnx text fallback). Image / PDF are byte-level reads. Video unsupported |
+| Dimension            | Verdict                                        | Notes                                                                                                                                                                                                                                                                                                      |
+| -------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Sparkle fit**      | **Neutral**                                    | Cleanly serves Stream + Resources backends as mounts; does not classify, dedup, or surface upstream ACLs. The bucket distinctions S/P/A/R/K/L/E remain a problem for the indexer above Mirage                                                                                                              |
+| **Multimodal fit**   | **Poor** (text/structured only)                | No native multimodal embeddings. Audio is handled via offline ASR (sherpa-onnx text fallback). Image / PDF are byte-level reads. Video unsupported                                                                                                                                                         |
 | **Security posture** | **Alpha — exploitable in default daemon mode** | Daemon HTTP API is unauthenticated despite client-side token plumbing; `native=true` execute is raw `subprocess_shell`; `DiskResource.load_state` has a path-traversal in snapshot reload; SSH defaults to `known_hosts=None` (MITM). Runtime disk path-traversal is correctly defended. See `security.md` |
-| **Extensibility** | **Strong** | Public surfaces: Resource registry, Command registry, Cache stores, Index stores, Observer resource, Agent SDK adapters. Backwards compatibility explicitly *not* committed at this stage |
-| **Adoption effort** | **Low–Medium as wrapper / consumer** | 1–2 weeks for an MVP that uses `Workspace` as a connector library inside our indexer service. Higher if we adopt the daemon |
+| **Extensibility**    | **Strong**                                     | Public surfaces: Resource registry, Command registry, Cache stores, Index stores, Observer resource, Agent SDK adapters. Backwards compatibility explicitly *not* committed at this stage                                                                                                                  |
+| **Adoption effort**  | **Low–Medium as wrapper / consumer**           | 1–2 weeks for an MVP that uses `Workspace` as a connector library inside our indexer service. Higher if we adopt the daemon                                                                                                                                                                                |
 
 ## Final recommendation
 

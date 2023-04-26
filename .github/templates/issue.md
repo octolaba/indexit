@@ -54,7 +54,6 @@ Follow the research workflow defined in `AGENTS.md` / `CLAUDE.md` §3–§6.
 ## Research constraints
 
 This task is read-only with respect to the upstream subject:
-
 - Do not run any code from `research/{{project_slug}}/`, including test suites,
   examples, scripts, CLIs, build steps, package manager hooks, or local
   services.
@@ -70,7 +69,6 @@ Produce reports under
 `docs/{{project_slug}}. <agent-slug>/` (note the literal `. ` separator), with
 `<agent-slug>` set to the lowercase normalized `{model}-{effort}` of the
 executing agent (e.g. `claude-opus-4.7-xhigh`):
-
 - [ ] `README.md` — executive summary, run metadata (model + effort), pinned
       ref, verdict matrix (Sparkle fit, multimodal fit, security posture,
       extensibility, adoption effort), links to the three reports.

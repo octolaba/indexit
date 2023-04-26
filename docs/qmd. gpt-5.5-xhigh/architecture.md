@@ -59,7 +59,6 @@ flowchart TB
 ```
 
 Deployable units are:
-
 - `qmd` CLI: `package.json` maps the executable name to `bin/qmd`, and `bin/qmd` dispatches to Node or Bun based on installed lockfiles (`research/qmd/package.json:14`, `research/qmd/bin/qmd:1`, `research/qmd/bin/qmd:18`, `research/qmd/bin/qmd:26` @ `65cd1b3...`).
 - SDK/library: `package.json` exports `dist/index.js` and `dist/index.d.ts`, while `src/index.ts` exposes `createStore`, `QMDStore`, search, retrieval, collection, context, indexing, embedding, and lifecycle methods (`research/qmd/package.json:6`, `research/qmd/package.json:8`, `research/qmd/src/index.ts:216`, `research/qmd/src/index.ts:338` @ `65cd1b3...`).
 - MCP server: `src/mcp/server.ts` registers MCP tools/resources and starts stdio or localhost HTTP transports (`research/qmd/src/mcp/server.ts:172`, `research/qmd/src/mcp/server.ts:186`, `research/qmd/src/mcp/server.ts:238`, `research/qmd/src/mcp/server.ts:540`, `research/qmd/src/mcp/server.ts:565` @ `65cd1b3...`).
@@ -115,7 +114,6 @@ sequenceDiagram
 ```
 
 End-to-end indexing works as follows:
-
 1. A collection defines an absolute path, glob pattern, ignore list, context, update hook, and default inclusion behavior (`research/qmd/src/collections.ts:27`, `research/qmd/src/collections.ts:49` @ `65cd1b3...`).
 2. Reindexing excludes common generated directories, runs `fastGlob` with `onlyFiles: true`, `followSymbolicLinks: false`, `dot: false`, and configured ignore patterns, then filters hidden path segments (`research/qmd/src/store.ts:1183`, `research/qmd/src/store.ts:1189`, `research/qmd/src/store.ts:1196` @ `65cd1b3...`).
 3. Each matching file is resolved, read as UTF-8 text, skipped if empty, hashed with SHA-256, titled, and inserted or updated by collection/path (`research/qmd/src/store.ts:1206`, `research/qmd/src/store.ts:1211`, `research/qmd/src/store.ts:1220`, `research/qmd/src/store.ts:1225`, `research/qmd/src/store.ts:1230`, `research/qmd/src/store.ts:1245` @ `65cd1b3...`).
@@ -162,30 +160,28 @@ Lexical query strings are sanitized into FTS5 syntax before parameterized `MATCH
 
 ## Storage Backends And Indices
 
-| Store | Purpose | Evidence |
-| --- | --- | --- |
-| SQLite database file | Main local persistence; default path is under `~/.cache/qmd/{indexName}.sqlite`. | `research/qmd/src/store.ts:530`, `research/qmd/src/store.ts:544` @ `65cd1b3...` |
-| `content` table | Content-addressed full document body by hash. | `research/qmd/src/store.ts:746` @ `65cd1b3...` |
-| `documents` table | Collection/path/title/hash/timestamps/active mapping. | `research/qmd/src/store.ts:755` @ `65cd1b3...` |
-| `documents_fts` | SQLite FTS5 index over filepath, title, and body. | `research/qmd/src/store.ts:824` @ `65cd1b3...` |
-| `content_vectors` | Embedding metadata by content hash and chunk sequence. | `research/qmd/src/store.ts:785`, `research/qmd/src/store.ts:792` @ `65cd1b3...` |
-| `vectors_vec` | `sqlite-vec` virtual table with cosine distance. | `research/qmd/src/store.ts:1050`, `research/qmd/src/store.ts:1069` @ `65cd1b3...` |
-| `llm_cache` | Cached query expansion and rerank outputs. | `research/qmd/src/store.ts:776`, `research/qmd/src/store.ts:1901` @ `65cd1b3...` |
-| model cache | Local GGUF files resolved by `node-llama-cpp`. | `research/qmd/src/llm.ts:211`, `research/qmd/src/llm.ts:251`, `research/qmd/src/llm.ts:592` @ `65cd1b3...` |
+| Store                | Purpose                                                                          | Evidence                                                                                                   |
+| -------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| SQLite database file | Main local persistence; default path is under `~/.cache/qmd/{indexName}.sqlite`. | `research/qmd/src/store.ts:530`, `research/qmd/src/store.ts:544` @ `65cd1b3...`                            |
+| `content` table      | Content-addressed full document body by hash.                                    | `research/qmd/src/store.ts:746` @ `65cd1b3...`                                                             |
+| `documents` table    | Collection/path/title/hash/timestamps/active mapping.                            | `research/qmd/src/store.ts:755` @ `65cd1b3...`                                                             |
+| `documents_fts`      | SQLite FTS5 index over filepath, title, and body.                                | `research/qmd/src/store.ts:824` @ `65cd1b3...`                                                             |
+| `content_vectors`    | Embedding metadata by content hash and chunk sequence.                           | `research/qmd/src/store.ts:785`, `research/qmd/src/store.ts:792` @ `65cd1b3...`                            |
+| `vectors_vec`        | `sqlite-vec` virtual table with cosine distance.                                 | `research/qmd/src/store.ts:1050`, `research/qmd/src/store.ts:1069` @ `65cd1b3...`                          |
+| `llm_cache`          | Cached query expansion and rerank outputs.                                       | `research/qmd/src/store.ts:776`, `research/qmd/src/store.ts:1901` @ `65cd1b3...`                           |
+| model cache          | Local GGUF files resolved by `node-llama-cpp`.                                   | `research/qmd/src/llm.ts:211`, `research/qmd/src/llm.ts:251`, `research/qmd/src/llm.ts:592` @ `65cd1b3...` |
 
 There is no separate blob store. Full document content is stored directly in SQLite `content.doc` (`research/qmd/src/store.ts:748` @ `65cd1b3...`).
 
 ## Extension Points
 
 Stable or intended extension surfaces:
-
 - SDK: `createStore(options)` accepts a required `dbPath`, plus either `configPath` or inline `config`; it returns `QMDStore` with search/retrieval/collection/context/update/embed/status/close methods (`research/qmd/src/index.ts:200`, `research/qmd/src/index.ts:216`, `research/qmd/src/index.ts:338`, `research/qmd/src/index.ts:383`, `research/qmd/src/index.ts:430`, `research/qmd/src/index.ts:481` @ `65cd1b3...`).
 - YAML/inline collection config: collections can specify path, pattern, ignore patterns, contexts, update command, inclusion default, and model overrides (`research/qmd/src/collections.ts:27`, `research/qmd/src/collections.ts:37`, `research/qmd/src/collections.ts:48` @ `65cd1b3...`).
 - Model selection: `LlamaCpp` accepts configured embed/generate/rerank model URIs, with environment-variable fallback and defaults (`research/qmd/src/llm.ts:438` @ `65cd1b3...`).
 - MCP tools/resources: `server.ts` registers a `qmd://{+path}` document resource and tools for `query`, `get`, `multi_get`, and `status` (`research/qmd/src/mcp/server.ts:186`, `research/qmd/src/mcp/server.ts:238`, `research/qmd/src/mcp/server.ts:365`, `research/qmd/src/mcp/server.ts:430`, `research/qmd/src/mcp/server.ts:503` @ `65cd1b3...`).
 
 Internal or unstable surfaces:
-
 - `src/store.ts` exposes many low-level functions, but the public package export is `dist/index.js`, not per-module subpath exports (`research/qmd/package.json:8` @ `65cd1b3...`).
 - The filesystem connector is embedded in `reindexCollection`; there is no connector interface comparable to a feed/source plugin abstraction (`research/qmd/src/store.ts:1180`, `research/qmd/src/index.ts:481` @ `65cd1b3...`).
 - `update` commands are shell hooks in collection config, not a typed sync API (`research/qmd/src/collections.ts:32`, `research/qmd/src/cli/qmd.ts:554` @ `65cd1b3...`).
@@ -200,12 +196,12 @@ QMD is a TypeScript ESM package with Node.js >= 22 and Bun support (`research/qm
 
 ## Architecture Checklist
 
-| Question | Answer |
-| --- | --- |
-| What problem does it solve? | Local hybrid search over markdown/text knowledge bases with BM25, vectors, query expansion, and reranking (`research/qmd/README.md:3`, `research/qmd/README.md:5` @ `65cd1b3...`). |
-| Deployable units? | CLI binary, SDK/library, MCP stdio/HTTP server, SQLite database, local GGUF model cache (`research/qmd/package.json:14`, `research/qmd/src/index.ts:338`, `research/qmd/src/mcp/server.ts:540`, `research/qmd/src/mcp/server.ts:565`, `research/qmd/src/store.ts:530`, `research/qmd/src/llm.ts:211` @ `65cd1b3...`). |
-| Indexing pipeline? | Collection config -> glob scan -> UTF-8 read -> content hash/title -> SQLite content/documents/FTS -> chunk/embed -> `content_vectors` and `vectors_vec` (`research/qmd/src/store.ts:1189`, `research/qmd/src/store.ts:1211`, `research/qmd/src/store.ts:1225`, `research/qmd/src/store.ts:1247`, `research/qmd/src/store.ts:1397`, `research/qmd/src/store.ts:3135` @ `65cd1b3...`). |
-| Storage backends and indices? | SQLite tables, FTS5 virtual table, sqlite-vec virtual table, local model cache (`research/qmd/src/store.ts:746`, `research/qmd/src/store.ts:824`, `research/qmd/src/store.ts:1069`, `research/qmd/src/llm.ts:211` @ `65cd1b3...`). |
-| Extension points and plugin surfaces? | SDK, YAML/inline config, model URI config, MCP tools, and packaged agent skill; no stable source connector API (`research/qmd/src/index.ts:216`, `research/qmd/src/collections.ts:48`, `research/qmd/src/llm.ts:438`, `research/qmd/src/mcp/server.ts:238`, `research/qmd/skills/qmd/SKILL.md:1` @ `65cd1b3...`). |
-| Runtime model? | Single-process local CLI/SDK/MCP; optional localhost HTTP daemon; no distributed runtime (`research/qmd/src/mcp/server.ts:565`, `research/qmd/src/mcp/server.ts:797` @ `65cd1b3...`). |
-| Languages/frameworks/dependencies? | TypeScript ESM, Node/Bun, SQLite/better-sqlite3, sqlite-vec, node-llama-cpp, MCP SDK, web-tree-sitter, YAML, Zod (`research/qmd/package.json:47`, `research/qmd/package.json:89` @ `65cd1b3...`). |
+| Question                              | Answer                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| What problem does it solve?           | Local hybrid search over markdown/text knowledge bases with BM25, vectors, query expansion, and reranking (`research/qmd/README.md:3`, `research/qmd/README.md:5` @ `65cd1b3...`).                                                                                                                                                                                                    |
+| Deployable units?                     | CLI binary, SDK/library, MCP stdio/HTTP server, SQLite database, local GGUF model cache (`research/qmd/package.json:14`, `research/qmd/src/index.ts:338`, `research/qmd/src/mcp/server.ts:540`, `research/qmd/src/mcp/server.ts:565`, `research/qmd/src/store.ts:530`, `research/qmd/src/llm.ts:211` @ `65cd1b3...`).                                                                 |
+| Indexing pipeline?                    | Collection config -> glob scan -> UTF-8 read -> content hash/title -> SQLite content/documents/FTS -> chunk/embed -> `content_vectors` and `vectors_vec` (`research/qmd/src/store.ts:1189`, `research/qmd/src/store.ts:1211`, `research/qmd/src/store.ts:1225`, `research/qmd/src/store.ts:1247`, `research/qmd/src/store.ts:1397`, `research/qmd/src/store.ts:3135` @ `65cd1b3...`). |
+| Storage backends and indices?         | SQLite tables, FTS5 virtual table, sqlite-vec virtual table, local model cache (`research/qmd/src/store.ts:746`, `research/qmd/src/store.ts:824`, `research/qmd/src/store.ts:1069`, `research/qmd/src/llm.ts:211` @ `65cd1b3...`).                                                                                                                                                    |
+| Extension points and plugin surfaces? | SDK, YAML/inline config, model URI config, MCP tools, and packaged agent skill; no stable source connector API (`research/qmd/src/index.ts:216`, `research/qmd/src/collections.ts:48`, `research/qmd/src/llm.ts:438`, `research/qmd/src/mcp/server.ts:238`, `research/qmd/skills/qmd/SKILL.md:1` @ `65cd1b3...`).                                                                     |
+| Runtime model?                        | Single-process local CLI/SDK/MCP; optional localhost HTTP daemon; no distributed runtime (`research/qmd/src/mcp/server.ts:565`, `research/qmd/src/mcp/server.ts:797` @ `65cd1b3...`).                                                                                                                                                                                                 |
+| Languages/frameworks/dependencies?    | TypeScript ESM, Node/Bun, SQLite/better-sqlite3, sqlite-vec, node-llama-cpp, MCP SDK, web-tree-sitter, YAML, Zod (`research/qmd/package.json:47`, `research/qmd/package.json:89` @ `65cd1b3...`).                                                                                                                                                                                     |
