@@ -1,15 +1,32 @@
 ---
+code: null
+id: I_kwDOSVjJbs8AAAABdmqwYg
+databaseId: 6281670754
+number: 2
+url: https://github.com/octolaba/indexit/issues/2
 title: "research: mirage@v0.0.1"
-state: closed
+issueType: Task
 labels:
-  - type/research
-  - research/architecture
-  - research/security
-  - research/applicability
-assignees: []
+  - "type/research"
+  - "research/architecture"
+  - "research/security"
+  - "research/applicability"
+assignees:
+  - kamilsk
 milestone: null
-type: task
+parent: null
+issueFields: {}
+state: CLOSED
+stateReason: COMPLETED
+duplicateOf: null
+createdAt: 2026-11-09T07:13:41Z
+updatedAt: 2026-11-09T07:13:44Z
+lastEditedAt: null
+closedAt: 2026-11-09T07:13:44Z
 ---
+
+# research: mirage@v0.0.1
+
 # Research Mirage v0.0.1
 
 ## Subject

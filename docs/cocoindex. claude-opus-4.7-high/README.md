@@ -10,7 +10,7 @@
 | Analyst       | `claude-opus-4.7` (1M-context variant)                                                                                                  |
 | Effort        | high                                                                                                                                    |
 | Date          | 2026-05-06                                                                                                                              |
-| Issue         | [`.github/issues/research-cocoindex-v1.0.3.md`](../../.github/issues/research-cocoindex-v1.0.3.md)                                      |
+| Issue         | [`.github/issues/issue-3.md`](../../.github/issues/issue-3.md)                                      |
 | Method        | Static, read-only review per CLAUDE.md / AGENTS.md §3–§5. No code executed. Treated upstream docs as evidence, not procedure.           |
 
 ## TL;DR

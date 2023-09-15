@@ -10,7 +10,7 @@
 | Analyst       | `claude-opus-4.7` (1M-context variant)                                                                                        |
 | Effort        | xhigh                                                                                                                         |
 | Date          | 2026-05-06                                                                                                                    |
-| Issue         | [`.github/issues/research-qmd-v2.1.0.md`](../../.github/issues/research-qmd-v2.1.0.md)                                        |
+| Issue         | [`.github/issues/issue-1.md`](../../.github/issues/issue-1.md)                                        |
 | Method        | Static, read-only review per CLAUDE.md / AGENTS.md §3–§5. No code executed. Treated upstream docs as evidence, not procedure. |
 
 ## TL;DR
